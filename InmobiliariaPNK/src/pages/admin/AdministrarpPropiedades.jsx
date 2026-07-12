@@ -9,7 +9,7 @@ import { Table, Button, Form } from 'react-bootstrap';
 import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
 import { alertConfirm, alertSuccess } from '../../components/ui/Alerts';
 import PropertyFormModal from '../../components/properties/PropertyFormModal';
-import { mockProperties } from '../../data/mockData';
+import { mockProperties, MOCK_USERS } from '../../data/mockData';
 
 const ESTADOS = ['publicada', 'pausada', 'eliminada'];
 
@@ -142,6 +142,8 @@ export default function AdministrarpPropiedades() {
         onSave={handleSave}
         initial={editData}
         loading={saving}
+        isAdmin={true}
+        propietarios={MOCK_USERS.filter(u => u.rol === 'propietario')}
       />
     </div>
   );

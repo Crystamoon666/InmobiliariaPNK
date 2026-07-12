@@ -8,6 +8,7 @@ import { useState, useRef } from 'react';
 import { Table, Button, Modal, Form, Row, Col } from 'react-bootstrap';
 import { PageHeader, StatusBadge, EmptyState, PrimaryButton } from '../../components/ui';
 import { alertConfirm, alertSuccess, alertError } from '../../components/ui/Alerts';
+import { MOCK_USERS } from '../../data/mockData';
 
 // Validación básica de RUT chileno
 const validarRut = (rut) => {
@@ -51,12 +52,6 @@ const validarFecha = (fecha) => {
   return null;
 };
 
-const MOCK_USERS_INIT = [
-  { id: 1, rut: '12.345.678-9', nombre_completo: 'María González', fecha_nacimiento: '1990-03-15', correo: 'maria@demo.cl', sexo: 'femenino',  telefono: '+56912345678', rol: 'propietario', estado: 'activo',   foto_url: null },
-  { id: 2, rut: '9.876.543-2',  nombre_completo: 'Carlos Pérez',   fecha_nacimiento: '1985-07-22', correo: 'carlos@demo.cl', sexo: 'masculino', telefono: '+56987654321', rol: 'propietario', estado: 'pendiente', foto_url: null },
-  { id: 3, rut: '15.432.100-K', nombre_completo: 'Ana López',      fecha_nacimiento: '1995-11-08', correo: 'ana@demo.cl',   sexo: 'femenino',  telefono: '+56911223344', rol: 'propietario', estado: 'activo',   foto_url: null },
-  { id: 4, rut: '7.654.321-0',  nombre_completo: 'Pedro Soto',     fecha_nacimiento: '1978-01-30', correo: 'pedro@demo.cl', sexo: 'masculino', telefono: '+56955443322', rol: 'propietario', estado: 'inactivo', foto_url: null },
-];
 
 const EMPTY_FORM = {
   rut: '', nombre_completo: '', fecha_nacimiento: '', correo: '',
@@ -64,7 +59,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdministrarUsers() {
-  const [users,     setUsers]     = useState(MOCK_USERS_INIT);
+  const [users,     setUsers]     = useState(MOCK_USERS);
   const [showModal, setShowModal] = useState(false);
   const [editUser,  setEditUser]  = useState(null);
   const [form,      setForm]      = useState(EMPTY_FORM);

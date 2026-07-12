@@ -38,6 +38,7 @@ const validarRol = (rol) => {
 };
 
 const EMPTY = {
+  propietario_id:   '',
   numero_bien_raiz: '',
   tipo:             'casa',
   descripcion:      '',
@@ -61,7 +62,7 @@ const EMPTY = {
   fotos:            [],
 };
 
-export default function PropertyFormModal({ show, onHide, onSave, initial = null, loading = false }) {
+export default function PropertyFormModal({ show, onHide, onSave, initial = null, loading = false, isAdmin = false, propietarios = [] }) {
   const [form, setForm] = useState(EMPTY);
 
   useEffect(() => {
@@ -121,6 +122,30 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
             <p style={{ fontWeight: 700, fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-gray-600)', margin: '0 0 0.75rem' }}>
               📋 Identificación
             </p>
+
+            {isAdmin && (
+              <Row className="mb-3">
+                <Col xs={12}>
+                  <Form.Group controlId="pPropietario">
+                    <Form.Label style={labelStyle}>Propietario asignado *</Form.Label>
+                    <Form.Select
+                      value={form.propietario_id}
+                      onChange={e => handleChange('propietario_id', e.target.value)}
+                      required
+                      style={inputStyle}
+                    >
+                      <option value="">Selecciona un propietario...</option>
+                      {propietarios.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre_completo} ({p.rut})
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+            )}
+
             <Row className="g-3">
               <Col xs={12} sm={6}>
                 <Form.Group controlId="pRolAvaluo">
