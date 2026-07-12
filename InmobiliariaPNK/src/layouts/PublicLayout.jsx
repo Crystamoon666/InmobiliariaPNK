@@ -1,9 +1,20 @@
-// TODO: Fase 3.2 — Layout público con Navbar y Footer
+/**
+ * PublicLayout.jsx — Layout para páginas públicas (sin sesión requerida)
+ * Estructura: Navbar fijo arriba + contenido (Outlet) + Footer
+ */
+
 import { Outlet } from 'react-router-dom';
+import Navbar from './Navbar';
+import Footer from './Footer';
+
 export default function PublicLayout() {
   return (
-    <>
-      <Outlet />
-    </>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Navbar />
+      <main style={{ flex: 1 }}>
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
   );
 }
