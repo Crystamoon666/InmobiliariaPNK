@@ -29,6 +29,7 @@ import PropiedadesDetalle from '../pages/public/PropiedadesDetalle';
 import About              from '../pages/public/About';
 import Contact            from '../pages/public/Contact';
 import Unauthorized       from '../pages/public/Unauthorized';
+import RecuperarPassword  from '../pages/public/RecuperarPassword';
 
 // ── Páginas Admin ─────────────────────────────────────────────
 import DashboardAdmin          from '../pages/admin/DashboardAdmin';
@@ -57,8 +58,9 @@ export default function AppRoutes() {
       </Route>
 
       {/* ── LOGIN Y REGISTRO (sin layout de navbar) ── */}
-      <Route path="/login"    element={<Login />} />
-      <Route path="/registro" element={<Registro />} />
+      <Route path="/login"               element={<Login />} />
+      <Route path="/registro"            element={<Registro />} />
+      <Route path="/recuperar-password" element={<RecuperarPassword />} />
 
       {/* ── RUTAS ADMINISTRADOR (requiere sesión + rol 'admin') ── */}
       <Route element={<RoleRoute allowedRoles={['admin']} />}>

@@ -2,13 +2,29 @@
  * Login.jsx — Página de inicio de sesión PNK Inmobiliaria
  * Patrón Guía 3: Form, Alert, Spinner de React-Bootstrap.
  * Roles: admin → /admin/dashboard | propietario → /propietario/dashboard
+ *
+ * MODO DEMO: mientras el backend no esté listo, usa los botones de acceso rápido
+ * para simular sesiones de admin y propietario con datos mock en localStorage.
  */
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Container, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import useAuth from '../../hooks/useAuth';
+import { saveSession } from '../../services/authService';
 import logoSvg from '../../assets/logo.svg';
+
+// Usuarios demo para revisar sin backend
+const DEMO_USERS = {
+  admin: {
+    token: 'demo-token-admin-pnk',
+    user:  { id: 1, nombre_completo: 'Admin PNK', correo: 'admin@pnk.cl', rol: 'admin', estado: 'activo' },
+  },
+  propietario: {
+    token: 'demo-token-propietario-pnk',
+    user:  { id: 2, nombre_completo: 'María González', correo: 'maria@demo.cl', rol: 'propietario', estado: 'activo' },
+  },
+};
 
 export default function Login() {
   const { login } = useAuth();
@@ -18,6 +34,13 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
+
+  // ── Acceso demo sin backend ──────────────────────────────
+  const handleDemo = (rol) => {
+    const { token, user } = DEMO_USERS[rol];
+    saveSession(token, user);
+    window.location.href = rol === 'admin' ? '/admin/dashboard' : '/propietario/dashboard';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,6 +114,45 @@ export default function Login() {
 
             {error && <Alert variant="danger" style={{ borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' }}>{error}</Alert>}
 
+            {/* ── Banner modo demo ── */}
+            <div
+              style={{
+                background:   '#fef9c3',
+                border:       '1px solid #fde047',
+                borderRadius: 'var(--radius-md)',
+                padding:      '0.9rem 1rem',
+                marginBottom: '1.25rem',
+              }}
+            >
+              <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: '#854d0e', margin: '0 0 0.6rem' }}>
+                🚧 MODO DEMO — Acceso rápido sin backend
+              </p>
+              <div className="d-flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleDemo('admin')}
+                  style={{
+                    background:   'var(--color-dark)', color: 'white', border: 'none',
+                    borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-xs)',
+                    flex: 1,
+                  }}
+                >
+                  👤 Entrar como Admin
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleDemo('propietario')}
+                  style={{
+                    background:   'var(--color-primary)', color: 'white', border: 'none',
+                    borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-xs)',
+                    flex: 1,
+                  }}
+                >
+                  🏠 Entrar como Propietario
+                </Button>
+              </div>
+            </div>
+
             <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3" controlId="loginCorreo">
                 <Form.Label style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Correo electrónico</Form.Label>
@@ -104,17 +166,26 @@ export default function Login() {
                 />
               </Form.Group>
 
-              <Form.Group className="mb-4" controlId="loginPassword">
-                <Form.Label style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Contraseña</Form.Label>
+              <Form.Group className="mb-2" controlId="loginPassword">
+                <div className="d-flex justify-content-between align-items-center">
+                  <Form.Label style={{ fontWeight: 600, fontSize: 'var(--text-sm)', margin: 0 }}>Contraseña</Form.Label>
+                  <Link
+                    to="/recuperar-password"
+                    style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 600 }}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <Form.Control
                   type="password"
                   placeholder="Tu contraseña"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  style={{ borderRadius: 'var(--radius-md)', padding: '0.65rem 0.9rem' }}
+                  style={{ borderRadius: 'var(--radius-md)', padding: '0.65rem 0.9rem', marginTop: '0.4rem' }}
                 />
               </Form.Group>
+              <div style={{ marginBottom: '1.25rem' }} />
 
               <Button
                 type="submit"
@@ -150,14 +221,18 @@ export default function Login() {
               background:  'var(--color-gray-50)',
               fontSize:    'var(--text-sm)',
               color:       'var(--color-gray-600)',
+              display:     'flex',
+              flexDirection: 'column',
+              gap:         '0.5rem',
             }}
           >
-            ¿No tienes cuenta?{' '}
-            <Link to="/registro" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
-              Regístrate como propietario
-            </Link>
-            <br />
-            <Link to="/" style={{ color: 'var(--color-gray-600)', fontSize: 'var(--text-xs)', marginTop: '0.5rem', display: 'inline-block' }}>
+            <span>
+              ¿No tienes cuenta?{' '}
+              <Link to="/registro" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
+                Regístrate como propietario
+              </Link>
+            </span>
+            <Link to="/" style={{ color: 'var(--color-gray-500)', fontSize: 'var(--text-xs)' }}>
               ← Volver al inicio
             </Link>
           </div>

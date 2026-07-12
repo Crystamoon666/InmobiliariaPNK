@@ -1,36 +1,62 @@
 /**
  * PropertyFormModal.jsx — Modal para crear/editar propiedades
- * Reutilizado por PublicarPropiedad y EditarPropiedades.
+ * Reutilizado por MisPropiedades, PublicarPropiedad, EditarPropiedades y admin.
+ *
+ * Campos incluidos:
+ *  - N° Bienes Raíces, Tipo, Descripción, Precios CLP/UF
+ *  - Dormitorios, Baños, Área construida/terreno
+ *  - Provincia → Comuna → Sector
+ *  - Amenidades (toggle pills)
+ *  - Solicitar visita (switch)
+ *  - Fotografías (1-10) con previsualización y X para eliminar
  *
  * Props:
- *  - show       : boolean — muestra/oculta el modal
- *  - onHide     : función para cerrar
- *  - onSave(formData) : callback con los datos del formulario
- *  - initial    : objeto con datos iniciales (para editar)
- *  - loading    : boolean — estado de carga del botón guardar
+ *  - show       : boolean
+ *  - onHide     : función cerrar
+ *  - onSave(formData) : callback con datos del formulario
+ *  - initial    : objeto de datos iniciales (edición) o null (creación)
+ *  - loading    : boolean estado carga
  */
 
 import { useState, useEffect } from 'react';
 import { Modal, Form, Row, Col, Button } from 'react-bootstrap';
-import { PrimaryButton } from '../ui';
+import { PrimaryButton, PhotoUploader } from '../ui';
 import { UBICACIONES } from '../../data/mockData';
 
 const EMPTY = {
-  tipo: 'casa', descripcion: '', precio_clp: '', precio_uf: '',
-  banos: '', dormitorios: '', area_construida: '', area_terreno: '',
-  provincia: '', comuna: '', sector: '',
-  bodega: false, estacionamiento: false, logia: false,
-  cocina_amoblada: false, antejardin: false, patio_trasero: false, piscina: false,
-  solicitar_visita: true,
+  numero_bien_raiz:  '',
+  tipo:              'casa',
+  descripcion:       '',
+  precio_clp:        '',
+  precio_uf:         '',
+  banos:             '',
+  dormitorios:       '',
+  area_construida:   '',
+  area_terreno:      '',
+  provincia:         '',
+  comuna:            '',
+  sector:            '',
+  bodega:            false,
+  estacionamiento:   false,
+  logia:             false,
+  cocina_amoblada:   false,
+  antejardin:        false,
+  patio_trasero:     false,
+  piscina:           false,
+  solicitar_visita:  true,
+  fotos:             [], // array de { file, preview } o { url } para fotos ya guardadas
 };
 
 export default function PropertyFormModal({ show, onHide, onSave, initial = null, loading = false }) {
   const [form, setForm] = useState(EMPTY);
 
-  // Cargar datos iniciales al abrir en modo edición
   useEffect(() => {
     if (initial) {
-      setForm({ ...EMPTY, ...initial });
+      // Convertir foto_url del mock a formato de fotos array si existe
+      const fotosIniciales = initial.foto_url
+        ? [{ preview: initial.foto_url, url: initial.foto_url }]
+        : (initial.fotos || []);
+      setForm({ ...EMPTY, ...initial, fotos: fotosIniciales });
     } else {
       setForm(EMPTY);
     }
@@ -39,7 +65,11 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
   const comunas = form.provincia ? UBICACIONES[form.provincia] || [] : [];
 
   const handleChange = (field, value) =>
-    setForm(prev => ({ ...prev, [field]: value, ...(field === 'provincia' ? { comuna: '' } : {}) }));
+    setForm(prev => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'provincia' ? { comuna: '' } : {}),
+    }));
 
   const handleCheck = (field) =>
     setForm(prev => ({ ...prev, [field]: !prev[field] }));
@@ -63,33 +93,56 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
       <Modal.Body style={{ padding: '1.5rem' }}>
         <Form id="propertyForm" onSubmit={handleSubmit}>
 
-          {/* Tipo y descripción */}
-          <Row className="g-3 mb-3">
-            <Col xs={12} sm={4}>
-              <Form.Group controlId="pTipo">
-                <Form.Label style={labelStyle}>Tipo *</Form.Label>
-                <Form.Select value={form.tipo} onChange={e => handleChange('tipo', e.target.value)} required style={inputStyle}>
-                  <option value="casa">Casa</option>
-                  <option value="departamento">Departamento</option>
-                  <option value="terreno">Terreno</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col xs={12} sm={8}>
-              <Form.Group controlId="pDesc">
-                <Form.Label style={labelStyle}>Descripción *</Form.Label>
-                <Form.Control
-                  as="textarea" rows={2}
-                  value={form.descripcion}
-                  onChange={e => handleChange('descripcion', e.target.value)}
-                  required placeholder="Describe brevemente la propiedad..."
-                  style={inputStyle}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+          {/* ── Identificación ───────────────────────────── */}
+          <div style={{ background: 'var(--color-gray-50)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.25rem', border: '1px solid var(--color-gray-200)' }}>
+            <p style={{ fontWeight: 700, fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-gray-600)', margin: '0 0 0.75rem' }}>
+              📋 Identificación
+            </p>
+            <Row className="g-3">
+              <Col xs={12} sm={5}>
+                <Form.Group controlId="pNumeroBR">
+                  <Form.Label style={labelStyle}>N° Bienes Raíces *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Ej: 5432-2024"
+                    value={form.numero_bien_raiz}
+                    onChange={e => handleChange('numero_bien_raiz', e.target.value)}
+                    required
+                    style={inputStyle}
+                  />
+                  <Form.Text style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
+                    N° de registro según Bienes Raíces
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col xs={12} sm={4}>
+                <Form.Group controlId="pTipo">
+                  <Form.Label style={labelStyle}>Tipo *</Form.Label>
+                  <Form.Select value={form.tipo} onChange={e => handleChange('tipo', e.target.value)} required style={inputStyle}>
+                    <option value="casa">Casa</option>
+                    <option value="departamento">Departamento</option>
+                    <option value="terreno">Terreno</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </div>
 
-          {/* Precios */}
+          {/* ── Descripción ───────────────────────────────── */}
+          <Form.Group className="mb-3" controlId="pDesc">
+            <Form.Label style={labelStyle}>Descripción *</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={form.descripcion}
+              onChange={e => handleChange('descripcion', e.target.value)}
+              required
+              placeholder="Describe brevemente la propiedad..."
+              style={{ ...inputStyle, resize: 'vertical' }}
+            />
+          </Form.Group>
+
+          {/* ── Precios ──────────────────────────────────── */}
           <Row className="g-3 mb-3">
             <Col xs={12} sm={6}>
               <Form.Group controlId="pCLP">
@@ -117,29 +170,44 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
             </Col>
           </Row>
 
-          {/* Características numéricas */}
-          <Row className="g-3 mb-3">
-            {[
-              { id: 'pDorm',  field: 'dormitorios',     label: 'Dormitorios', hide: form.tipo === 'terreno' },
-              { id: 'pBanos', field: 'banos',            label: 'Baños',       hide: form.tipo === 'terreno' },
-              { id: 'pAC',    field: 'area_construida',  label: 'Área construida (m²)' },
-              { id: 'pAT',    field: 'area_terreno',     label: 'Área terreno (m²)' },
-            ].filter(f => !f.hide).map(({ id, field, label }) => (
-              <Col xs={6} sm={3} key={field}>
-                <Form.Group controlId={id}>
-                  <Form.Label style={labelStyle}>{label}</Form.Label>
-                  <Form.Control
-                    type="number" min="0"
-                    value={form[field]}
-                    onChange={e => handleChange(field, e.target.value)}
-                    style={inputStyle}
-                  />
+          {/* ── Características numéricas ─────────────────── */}
+          {form.tipo !== 'terreno' && (
+            <Row className="g-3 mb-3">
+              <Col xs={6} sm={3}>
+                <Form.Group controlId="pDorm">
+                  <Form.Label style={labelStyle}>Dormitorios</Form.Label>
+                  <Form.Control type="number" min="0" value={form.dormitorios} onChange={e => handleChange('dormitorios', e.target.value)} style={inputStyle} />
                 </Form.Group>
               </Col>
-            ))}
-          </Row>
+              <Col xs={6} sm={3}>
+                <Form.Group controlId="pBanos">
+                  <Form.Label style={labelStyle}>Baños</Form.Label>
+                  <Form.Control type="number" min="0" value={form.banos} onChange={e => handleChange('banos', e.target.value)} style={inputStyle} />
+                </Form.Group>
+              </Col>
+              <Col xs={6} sm={3}>
+                <Form.Group controlId="pAC">
+                  <Form.Label style={labelStyle}>Construido (m²)</Form.Label>
+                  <Form.Control type="number" min="0" value={form.area_construida} onChange={e => handleChange('area_construida', e.target.value)} style={inputStyle} />
+                </Form.Group>
+              </Col>
+              <Col xs={6} sm={3}>
+                <Form.Group controlId="pAT">
+                  <Form.Label style={labelStyle}>Terreno (m²)</Form.Label>
+                  <Form.Control type="number" min="0" value={form.area_terreno} onChange={e => handleChange('area_terreno', e.target.value)} style={inputStyle} />
+                </Form.Group>
+              </Col>
+            </Row>
+          )}
 
-          {/* Ubicación */}
+          {form.tipo === 'terreno' && (
+            <Form.Group className="mb-3" controlId="pATTerreno">
+              <Form.Label style={labelStyle}>Superficie (m²)</Form.Label>
+              <Form.Control type="number" min="0" value={form.area_terreno} onChange={e => handleChange('area_terreno', e.target.value)} style={inputStyle} />
+            </Form.Group>
+          )}
+
+          {/* ── Ubicación ─────────────────────────────────── */}
           <Row className="g-3 mb-3">
             <Col xs={12} sm={4}>
               <Form.Group controlId="pProvincia">
@@ -167,7 +235,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
             </Col>
           </Row>
 
-          {/* Amenidades */}
+          {/* ── Amenidades ────────────────────────────────── */}
           {form.tipo !== 'terreno' && (
             <div className="mb-3">
               <Form.Label style={labelStyle}>Amenidades</Form.Label>
@@ -186,15 +254,15 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
                     type="button"
                     onClick={() => handleCheck(field)}
                     style={{
-                      padding:       '0.4rem 0.9rem',
-                      borderRadius:  'var(--radius-full)',
-                      border:        `1px solid ${form[field] ? 'var(--color-primary)' : 'var(--color-gray-300)'}`,
-                      background:    form[field] ? 'var(--color-primary-alpha)' : 'var(--color-white)',
-                      color:         form[field] ? 'var(--color-primary)' : 'var(--color-gray-600)',
-                      fontSize:      'var(--text-sm)',
-                      fontWeight:    form[field] ? 600 : 400,
-                      cursor:        'pointer',
-                      transition:    'all var(--transition-fast)',
+                      padding:      '0.4rem 0.9rem',
+                      borderRadius: 'var(--radius-full)',
+                      border:       `1px solid ${form[field] ? 'var(--color-primary)' : 'var(--color-gray-300)'}`,
+                      background:   form[field] ? 'var(--color-primary-alpha)' : 'var(--color-white)',
+                      color:        form[field] ? 'var(--color-primary)' : 'var(--color-gray-600)',
+                      fontSize:     'var(--text-sm)',
+                      fontWeight:   form[field] ? 600 : 400,
+                      cursor:       'pointer',
+                      transition:   'all var(--transition-fast)',
                     }}
                   >
                     {label}
@@ -204,15 +272,35 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
             </div>
           )}
 
-          {/* Solicitar visita */}
-          <Form.Check
-            type="switch"
-            id="pVisita"
-            label="Permitir solicitudes de visita"
-            checked={form.solicitar_visita}
-            onChange={() => handleCheck('solicitar_visita')}
-            style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}
-          />
+          {/* ── Solicitar visita ──────────────────────────── */}
+          <div className="mb-4">
+            <Form.Check
+              type="switch"
+              id="pVisita"
+              label="Permitir solicitudes de visita"
+              checked={form.solicitar_visita}
+              onChange={() => handleCheck('solicitar_visita')}
+              style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}
+            />
+          </div>
+
+          {/* ── Fotografías (1-10) ────────────────────────── */}
+          <div
+            style={{
+              background:   'var(--color-gray-50)',
+              borderRadius: 'var(--radius-md)',
+              padding:      '1rem',
+              border:       '1px solid var(--color-gray-200)',
+            }}
+          >
+            <PhotoUploader
+              photos={form.fotos}
+              onChange={fotos => handleChange('fotos', fotos)}
+              maxPhotos={10}
+              label="Fotografías de la propiedad"
+            />
+          </div>
+
         </Form>
       </Modal.Body>
 
