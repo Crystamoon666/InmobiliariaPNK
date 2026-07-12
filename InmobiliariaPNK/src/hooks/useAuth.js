@@ -1,9 +1,11 @@
-// TODO: Fase 3.1 — Hook personalizado que consume AuthContext
-// Uso: const { user, token, login, logout } = useAuth();
-import { useContext } from 'react';
-// import { AuthContext } from '../context/AuthContext';
+/**
+ * useAuth.js — PNK Inmobiliaria
+ * Hook de acceso directo al AuthContext.
+ * Re-exporta el hook useAuth desde AuthContext para mayor comodidad.
+ *
+ * Uso:
+ *   import useAuth from '../hooks/useAuth';
+ *   const { user, login, logout, isAuthenticated } = useAuth();
+ */
 
-export default function useAuth() {
-  // TODO: return useContext(AuthContext);
-  return {};
-}
+export { useAuth as default } from '../context/AuthContext';
