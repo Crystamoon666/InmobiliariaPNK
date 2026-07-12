@@ -1,0 +1,311 @@
+/* ============================================================
+   theme.css — PNK Inmobiliaria
+   Paleta extraída del logo oficial (rojo #E8361A)
+   Inspirado en diseño UX de referencia: limpio, moderno, profesional
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap');
+
+:root {
+  /* ── Colores principales ── */
+  --color-primary:        #E8361A;   /* Rojo PNK (extraído del logo) */
+  --color-primary-dark:   #C42B13;   /* Rojo oscuro — hover de botones */
+  --color-primary-light:  #FF6147;   /* Rojo claro — acentos suaves */
+  --color-primary-alpha:  rgba(232, 54, 26, 0.10); /* Fondo suave de badges */
+
+  /* ── Colores secundarios / neutros ── */
+  --color-dark:           #1A1A2E;   /* Casi negro — texto headings */
+  --color-dark-soft:      #2D2D44;   /* Dark suave — texto body */
+  --color-gray-600:       #6B7280;   /* Gris medio — texto secundario */
+  --color-gray-300:       #D1D5DB;   /* Gris claro — bordes y separadores */
+  --color-gray-100:       #F3F4F6;   /* Gris muy claro — fondos de sección */
+  --color-gray-50:        #F9FAFB;   /* Casi blanco — fondos de card */
+  --color-white:          #FFFFFF;
+
+  /* ── Color de acento (complementario al rojo) ── */
+  --color-accent:         #1A3A5C;   /* Azul marino — contraste con el rojo */
+  --color-accent-light:   #E8F0FB;   /* Azul muy claro — fondos informativos */
+
+  /* ── Tipografía ── */
+  --font-heading:         'Outfit', 'Inter', sans-serif;
+  --font-body:            'Inter', sans-serif;
+
+  /* ── Tamaños tipográficos ── */
+  --text-xs:    0.75rem;    /* 12px */
+  --text-sm:    0.875rem;   /* 14px */
+  --text-base:  1rem;       /* 16px */
+  --text-lg:    1.125rem;   /* 18px */
+  --text-xl:    1.25rem;    /* 20px */
+  --text-2xl:   1.5rem;     /* 24px */
+  --text-3xl:   1.875rem;   /* 30px */
+  --text-4xl:   2.25rem;    /* 36px */
+  --text-5xl:   3rem;       /* 48px */
+
+  /* ── Espaciado ── */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* ── Bordes y sombras ── */
+  --radius-sm:  0.375rem;
+  --radius-md:  0.75rem;
+  --radius-lg:  1rem;
+  --radius-xl:  1.5rem;
+  --radius-full: 9999px;
+
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg:  0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-primary: 0 8px 24px rgba(232, 54, 26, 0.30);
+
+  /* ── Transiciones ── */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* ── Ancho máximo de contenedor ── */
+  --container-max: 1200px;
+}
+
+/* ── Reset y base ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-dark-soft);
+  background-color: var(--color-white);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-dark);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+/* ── Sobreescritura de Bootstrap con la paleta PNK ── */
+
+/* Botón primario */
+.btn-primary {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-white) !important;
+  font-family: var(--font-body);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 1.4rem;
+  transition: background-color var(--transition-fast),
+              transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--color-primary-dark) !important;
+  border-color: var(--color-primary-dark) !important;
+  box-shadow: var(--shadow-primary) !important;
+  transform: translateY(-1px);
+}
+
+/* Botón outline primario */
+.btn-outline-primary {
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--color-primary) !important;
+  color: var(--color-white) !important;
+  transform: translateY(-1px);
+}
+
+/* Navbar */
+.navbar-brand {
+  font-family: var(--font-heading);
+  font-weight: 800;
+}
+
+/* Cards */
+.card {
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+/* Badges */
+.badge.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+/* Inputs */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 0.2rem var(--color-primary-alpha) !important;
+}
+
+/* ── Utilidades personalizadas ── */
+
+/* Hero section (como en diseño UX referencia) */
+.hero-section {
+  position: relative;
+  min-height: 85vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(26, 26, 46, 0.75) 0%,
+    rgba(26, 26, 46, 0.35) 60%,
+    transparent 100%
+  );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Caja de búsqueda flotante (patrón UX1) */
+.search-box {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Sección de estadísticas (patrón UX1: 100%, 500+, 150+, 2,00+) */
+.stat-number {
+  font-family: var(--font-heading);
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.stat-label {
+  font-size: var(--text-sm);
+  color: var(--color-gray-600);
+}
+
+/* Tarjeta de propiedad (patrón UX1 grid) */
+.property-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-gray-300);
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+  background: var(--color-white);
+}
+
+.property-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.property-card .badge-tipo {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  background: var(--color-primary);
+  color: white;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.property-card .price {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Sección con fondo gris claro (como en UX2) */
+.section-gray {
+  background-color: var(--color-gray-100);
+  padding: var(--space-16) 0;
+}
+
+.section-white {
+  background-color: var(--color-white);
+  padding: var(--space-16) 0;
+}
+
+/* Divider con color primario */
+.divider-primary {
+  width: 3rem;
+  height: 4px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-4);
+}
+
+/* Navbar fija con sombra al hacer scroll */
+.navbar-scrolled {
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(8px);
+}
+
+/* Animaciones de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s var(--transition-slow) both;
+}
+
+/* Footer */
+.footer-dark {
+  background-color: var(--color-dark);
+  color: var(--color-gray-300);
+}
+
+.footer-dark a {
+  color: var(--color-gray-300);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.footer-dark a:hover {
+  color: var(--color-primary);
+}

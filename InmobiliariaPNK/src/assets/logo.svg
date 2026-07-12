@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" fill="none">
+  <!-- Icono casa PNK -->
+  <!-- Techo superior -->
+  <polygon points="20,55 55,18 75,18 40,55" fill="#E8361A"/>
+  <!-- Techo inferior (plano derecho) -->
+  <polygon points="40,55 75,18 80,26 45,62" fill="#C42B13"/>
+  <!-- Columna izquierda -->
+  <rect x="20" y="55" width="12" height="35" fill="#E8361A"/>
+  <!-- Puerta / ventana interior -->
+  <rect x="28" y="42" width="8" height="48" fill="#C42B13"/>
+
+  <!-- Texto PNK -->
+  <text
+    x="98"
+    y="58"
+    font-family="'Outfit', 'Inter', Arial, sans-serif"
+    font-size="40"
+    font-weight="800"
+    fill="#E8361A"
+    letter-spacing="2"
+  >PNK</text>
+
+  <!-- Texto Inmobiliaria -->
+  <text
+    x="100"
+    y="84"
+    font-family="'Outfit', 'Inter', Arial, sans-serif"
+    font-size="20"
+    font-weight="600"
+    fill="#E8361A"
+    letter-spacing="1"
+  >Inmobiliaria</text>
+</svg>
