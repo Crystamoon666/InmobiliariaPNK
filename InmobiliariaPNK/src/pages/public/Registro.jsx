@@ -27,7 +27,6 @@ const validarRut = (rut) => {
   return dv === dvCalc;
 };
 
-// Formatea RUT con puntos y guión mientras el usuario escribe
 const formatRut = (rut) => {
   const cleaned = rut.replace(/[^0-9kK]/g, '');
   if (cleaned.length <= 1) return cleaned;
@@ -35,6 +34,25 @@ const formatRut = (rut) => {
   const dv     = cleaned.slice(-1);
   const formatted = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   return `${formatted}-${dv}`;
+};
+
+// Retorna la fecha máxima permitida (hoy - 18 años) en formato yyyy-mm-dd
+export const maxFechaNacimiento = () => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split('T')[0];
+};
+
+// Valida que la fecha no sea futura y que la persona tenga >= 18 años
+const validarFecha = (fecha) => {
+  if (!fecha) return 'Debes ingresar tu fecha de nacimiento.';
+  const hoy    = new Date();
+  const nacido = new Date(fecha);
+  if (nacido > hoy) return 'La fecha de nacimiento no puede ser en el futuro.';
+  const edad = hoy.getFullYear() - nacido.getFullYear()
+    - (hoy < new Date(hoy.getFullYear(), nacido.getMonth(), nacido.getDate()) ? 1 : 0);
+  if (edad < 18) return 'Debes ser mayor de 18 años para registrarte.';
+  return null;
 };
 
 const EMPTY = {
@@ -66,6 +84,11 @@ export default function Registro() {
     // Validaciones
     if (!validarRut(form.rut)) {
       setError('El RUT ingresado no es válido.');
+      return;
+    }
+    const errorFecha = validarFecha(form.fecha_nacimiento);
+    if (errorFecha) {
+      setError(errorFecha);
       return;
     }
     if (form.password !== form.confirm) {

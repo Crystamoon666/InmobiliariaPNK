@@ -32,6 +32,25 @@ const formatRut = (rut) => {
   return `${body}-${c.slice(-1)}`;
 };
 
+// Fecha máxima permitida (18 años antes de hoy)
+const maxFechaNac = () => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split('T')[0];
+};
+
+// Valida que la fecha no sea futura y que sea mayor de 18
+const validarFecha = (fecha) => {
+  if (!fecha) return 'La fecha de nacimiento es requerida.';
+  const hoy    = new Date();
+  const nacido = new Date(fecha);
+  if (nacido > hoy) return 'La fecha no puede ser en el futuro.';
+  const edad = hoy.getFullYear() - nacido.getFullYear()
+    - (hoy < new Date(hoy.getFullYear(), nacido.getMonth(), nacido.getDate()) ? 1 : 0);
+  if (edad < 18) return 'El propietario debe ser mayor de 18 años.';
+  return null;
+};
+
 const MOCK_USERS_INIT = [
   { id: 1, rut: '12.345.678-9', nombre_completo: 'María González', fecha_nacimiento: '1990-03-15', correo: 'maria@demo.cl', sexo: 'femenino',  telefono: '+56912345678', rol: 'propietario', estado: 'activo',   foto_url: null },
   { id: 2, rut: '9.876.543-2',  nombre_completo: 'Carlos Pérez',   fecha_nacimiento: '1985-07-22', correo: 'carlos@demo.cl', sexo: 'masculino', telefono: '+56987654321', rol: 'propietario', estado: 'pendiente', foto_url: null },
@@ -93,6 +112,11 @@ export default function AdministrarUsers() {
     e.preventDefault();
     if (!validarRut(form.rut)) {
       await alertError('RUT inválido', 'Verifica el RUT ingresado.');
+      return;
+    }
+    const errorFecha = validarFecha(form.fecha_nacimiento);
+    if (errorFecha) {
+      await alertError('Fecha inválida', errorFecha);
       return;
     }
     setLoading(true);
@@ -275,7 +299,18 @@ export default function AdministrarUsers() {
               <Col xs={12} sm={7}>
                 <Form.Group controlId="uFecha">
                   <Form.Label style={labelStyle}>Fecha de nacimiento *</Form.Label>
-                  <Form.Control type="date" value={form.fecha_nacimiento} onChange={e => handleChange('fecha_nacimiento', e.target.value)} required style={inputStyle} />
+                  <Form.Control
+                    type="date"
+                    value={form.fecha_nacimiento}
+                    onChange={e => handleChange('fecha_nacimiento', e.target.value)}
+                    required
+                    max={maxFechaNac()}
+                    min="1900-01-01"
+                    style={inputStyle}
+                  />
+                  <Form.Text style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
+                    El propietario debe ser mayor de 18 años
+                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col xs={12} sm={5}>

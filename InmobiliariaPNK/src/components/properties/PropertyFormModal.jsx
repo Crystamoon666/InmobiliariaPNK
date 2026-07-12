@@ -2,20 +2,12 @@
  * PropertyFormModal.jsx — Modal para crear/editar propiedades
  * Reutilizado por MisPropiedades, PublicarPropiedad, EditarPropiedades y admin.
  *
- * Campos incluidos:
+ * Campos:
  *  - N° Bienes Raíces, Tipo, Descripción, Precios CLP/UF
  *  - Dormitorios, Baños, Área construida/terreno
  *  - Provincia → Comuna → Sector
- *  - Amenidades (toggle pills)
- *  - Solicitar visita (switch)
+ *  - Amenidades (toggle pills), Solicitar visita (switch)
  *  - Fotografías (1-10) con previsualización y X para eliminar
- *
- * Props:
- *  - show       : boolean
- *  - onHide     : función cerrar
- *  - onSave(formData) : callback con datos del formulario
- *  - initial    : objeto de datos iniciales (edición) o null (creación)
- *  - loading    : boolean estado carga
  */
 
 import { useState, useEffect } from 'react';
@@ -24,27 +16,27 @@ import { PrimaryButton, PhotoUploader } from '../ui';
 import { UBICACIONES } from '../../data/mockData';
 
 const EMPTY = {
-  numero_bien_raiz:  '',
-  tipo:              'casa',
-  descripcion:       '',
-  precio_clp:        '',
-  precio_uf:         '',
-  banos:             '',
-  dormitorios:       '',
-  area_construida:   '',
-  area_terreno:      '',
-  provincia:         '',
-  comuna:            '',
-  sector:            '',
-  bodega:            false,
-  estacionamiento:   false,
-  logia:             false,
-  cocina_amoblada:   false,
-  antejardin:        false,
-  patio_trasero:     false,
-  piscina:           false,
-  solicitar_visita:  true,
-  fotos:             [], // array de { file, preview } o { url } para fotos ya guardadas
+  numero_bien_raiz: '',
+  tipo:             'casa',
+  descripcion:      '',
+  precio_clp:       '',
+  precio_uf:        '',
+  banos:            '',
+  dormitorios:      '',
+  area_construida:  '',
+  area_terreno:     '',
+  provincia:        '',
+  comuna:           '',
+  sector:           '',
+  bodega:           false,
+  estacionamiento:  false,
+  logia:            false,
+  cocina_amoblada:  false,
+  antejardin:       false,
+  patio_trasero:    false,
+  piscina:          false,
+  solicitar_visita: true,
+  fotos:            [],
 };
 
 export default function PropertyFormModal({ show, onHide, onSave, initial = null, loading = false }) {
@@ -52,7 +44,6 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
 
   useEffect(() => {
     if (initial) {
-      // Convertir foto_url del mock a formato de fotos array si existe
       const fotosIniciales = initial.foto_url
         ? [{ preview: initial.foto_url, url: initial.foto_url }]
         : (initial.fotos || []);
@@ -99,7 +90,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
               📋 Identificación
             </p>
             <Row className="g-3">
-              <Col xs={12} sm={5}>
+              <Col xs={12} sm={6}>
                 <Form.Group controlId="pNumeroBR">
                   <Form.Label style={labelStyle}>N° Bienes Raíces *</Form.Label>
                   <Form.Control
@@ -115,7 +106,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
                   </Form.Text>
                 </Form.Group>
               </Col>
-              <Col xs={12} sm={4}>
+              <Col xs={12} sm={6}>
                 <Form.Group controlId="pTipo">
                   <Form.Label style={labelStyle}>Tipo *</Form.Label>
                   <Form.Select value={form.tipo} onChange={e => handleChange('tipo', e.target.value)} required style={inputStyle}>
@@ -132,8 +123,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
           <Form.Group className="mb-3" controlId="pDesc">
             <Form.Label style={labelStyle}>Descripción *</Form.Label>
             <Form.Control
-              as="textarea"
-              rows={3}
+              as="textarea" rows={3}
               value={form.descripcion}
               onChange={e => handleChange('descripcion', e.target.value)}
               required
@@ -171,7 +161,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
           </Row>
 
           {/* ── Características numéricas ─────────────────── */}
-          {form.tipo !== 'terreno' && (
+          {form.tipo !== 'terreno' ? (
             <Row className="g-3 mb-3">
               <Col xs={6} sm={3}>
                 <Form.Group controlId="pDorm">
@@ -198,11 +188,9 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
                 </Form.Group>
               </Col>
             </Row>
-          )}
-
-          {form.tipo === 'terreno' && (
+          ) : (
             <Form.Group className="mb-3" controlId="pATTerreno">
-              <Form.Label style={labelStyle}>Superficie (m²)</Form.Label>
+              <Form.Label style={labelStyle}>Superficie total (m²)</Form.Label>
               <Form.Control type="number" min="0" value={form.area_terreno} onChange={e => handleChange('area_terreno', e.target.value)} style={inputStyle} />
             </Form.Group>
           )}
@@ -295,7 +283,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
           >
             <PhotoUploader
               photos={form.fotos}
-              onChange={fotos => handleChange('fotos', fotos)}
+              onChange={fotos => setForm(prev => ({ ...prev, fotos }))}
               maxPhotos={10}
               label="Fotografías de la propiedad"
             />

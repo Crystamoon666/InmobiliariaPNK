@@ -97,6 +97,9 @@ export default function AdminLayout() {
                 {user?.correo}
               </Dropdown.Item>
               <Dropdown.Divider />
+              <Dropdown.Item as="a" href="/" style={{ fontWeight: 600 }}>
+                🏠 Ir al sitio
+              </Dropdown.Item>
               <Dropdown.Item onClick={handleLogout} style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
                 🚪 Cerrar sesión
               </Dropdown.Item>
