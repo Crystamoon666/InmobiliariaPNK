@@ -76,11 +76,26 @@ export default function AdministrarUsers() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFotoChange = (e) => {
+  // Tipos MIME aceptados para la foto de perfil
+  const FOTO_TIPOS = ['image/jpeg','image/jpg','image/png','image/webp','image/gif','image/avif'];
+
+  const handleFotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validación de tipo por MIME (no solo por extensión)
+    if (!FOTO_TIPOS.includes(file.type)) {
+      await alertError(
+        'Formato no permitido',
+        `El archivo "${file.name}" no es una imagen válida.\nFormatos aceptados: JPG, PNG, WEBP, GIF, AVIF.`
+      );
+      e.target.value = '';
+      return;
+    }
+
     const preview = URL.createObjectURL(file);
     setForm(prev => ({ ...prev, foto_url: file, foto_preview: preview }));
+    e.target.value = '';
   };
 
   const handleRemoveFoto = () =>
@@ -279,7 +294,13 @@ export default function AdministrarUsers() {
                   {form.foto_preview ? '📷 Cambiar foto' : '📷 Agregar foto de perfil'}
                 </Button>
               </div>
-              <input ref={fileRef} type="file" accept="image/*" onChange={handleFotoChange} style={{ display: 'none' }} />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/avif"
+                onChange={handleFotoChange}
+                style={{ display: 'none' }}
+              />
             </div>
 
             {/* RUT */}
