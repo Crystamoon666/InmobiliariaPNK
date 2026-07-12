@@ -3,7 +3,7 @@
  * Reutilizado por MisPropiedades, PublicarPropiedad, EditarPropiedades y admin.
  *
  * Campos:
- *  - N° Bienes Raíces, Tipo, Descripción, Precios CLP/UF
+ *  - Rol de Avaluó (SII), Tipo, Descripción, Precios CLP/UF
  *  - Dormitorios, Baños, Área construida/terreno
  *  - Provincia → Comuna → Sector
  *  - Amenidades (toggle pills), Solicitar visita (switch)
@@ -14,6 +14,28 @@ import { useState, useEffect } from 'react';
 import { Modal, Form, Row, Col, Button } from 'react-bootstrap';
 import { PrimaryButton, PhotoUploader } from '../ui';
 import { UBICACIONES } from '../../data/mockData';
+
+/**
+ * Formatea el Rol de Avaluó del SII: solo números y un guión separador.
+ * Formato: MANZANA-PREDIAL  →  ej: "1234-56"
+ * - Solo admite dígitos (0-9) y el guión como separador.
+ * - El guión solo puede aparecer una vez y no al inicio.
+ * - Todo lo demás es rechazado.
+ */
+const formatRol = (raw) => {
+  // Eliminar cualquier carácter que no sea dígito o guión
+  const clean = raw.replace(/[^0-9-]/g, '');
+  // Asegurar solo un guión, no al inicio
+  const parts = clean.split('-');
+  if (parts.length === 1) return parts[0];              // sin guión aun
+  return `${parts[0]}-${parts.slice(1).join('')}`;      // guión único
+};
+
+/** Valida el formato completo del Rol: MANZANA-PREDIAL (ambas partes numéricas) */
+const validarRol = (rol) => {
+  if (!rol) return false;
+  return /^\d+-\d+$/.test(rol.trim());
+};
 
 const EMPTY = {
   numero_bien_raiz: '',
@@ -55,18 +77,28 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
 
   const comunas = form.provincia ? UBICACIONES[form.provincia] || [] : [];
 
-  const handleChange = (field, value) =>
+  const handleChange = (field, value) => {
+    // Aplicar formateo especial al Rol de Avaluó
+    if (field === 'numero_bien_raiz') value = formatRol(value);
     setForm(prev => ({
       ...prev,
       [field]: value,
       ...(field === 'provincia' ? { comuna: '' } : {}),
     }));
+  };
 
   const handleCheck = (field) =>
     setForm(prev => ({ ...prev, [field]: !prev[field] }));
 
+  const [rolError, setRolError] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!validarRol(form.numero_bien_raiz)) {
+      setRolError('Formato inválido. Ejemplo: 1234-56 (manzana-predial, solo números).');
+      return;
+    }
+    setRolError('');
     onSave(form);
   };
 
@@ -91,19 +123,27 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
             </p>
             <Row className="g-3">
               <Col xs={12} sm={6}>
-                <Form.Group controlId="pNumeroBR">
-                  <Form.Label style={labelStyle}>N° Bienes Raíces *</Form.Label>
+                <Form.Group controlId="pRolAvaluo">
+                  <Form.Label style={labelStyle}>Rol de Avaluó (SII) *</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Ej: 5432-2024"
+                    placeholder="Ej: 1234-56"
                     value={form.numero_bien_raiz}
                     onChange={e => handleChange('numero_bien_raiz', e.target.value)}
                     required
+                    maxLength={12}
+                    inputMode="numeric"
+                    isInvalid={!!rolError}
                     style={inputStyle}
                   />
-                  <Form.Text style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
-                    N° de registro según Bienes Raíces
-                  </Form.Text>
+                  <Form.Control.Feedback type="invalid" style={{ fontSize: 'var(--text-xs)' }}>
+                    {rolError}
+                  </Form.Control.Feedback>
+                  {!rolError && (
+                    <Form.Text style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
+                      Número de Manzana - Número Predial (solo dígitos)
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
               <Col xs={12} sm={6}>
