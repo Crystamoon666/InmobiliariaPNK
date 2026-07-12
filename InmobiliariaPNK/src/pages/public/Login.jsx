@@ -11,20 +11,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Container, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import useAuth from '../../hooks/useAuth';
-import { saveSession } from '../../services/authService';
 import logoSvg from '../../assets/logo.svg';
-
-// Usuarios demo para revisar sin backend
-const DEMO_USERS = {
-  admin: {
-    token: 'demo-token-admin-pnk',
-    user:  { id: 1, nombre_completo: 'Admin PNK', correo: 'admin@pnk.cl', rol: 'admin', estado: 'activo' },
-  },
-  propietario: {
-    token: 'demo-token-propietario-pnk',
-    user:  { id: 2, nombre_completo: 'María González', correo: 'maria@demo.cl', rol: 'propietario', estado: 'activo' },
-  },
-};
 
 export default function Login() {
   const { login } = useAuth();
@@ -34,13 +21,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
-
-  // ── Acceso demo sin backend ──────────────────────────────
-  const handleDemo = (rol) => {
-    const { token, user } = DEMO_USERS[rol];
-    saveSession(token, user);
-    window.location.href = rol === 'admin' ? '/admin/dashboard' : '/propietario/dashboard';
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,45 +93,6 @@ export default function Login() {
             </p>
 
             {error && <Alert variant="danger" style={{ borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' }}>{error}</Alert>}
-
-            {/* ── Banner modo demo ── */}
-            <div
-              style={{
-                background:   '#fef9c3',
-                border:       '1px solid #fde047',
-                borderRadius: 'var(--radius-md)',
-                padding:      '0.9rem 1rem',
-                marginBottom: '1.25rem',
-              }}
-            >
-              <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: '#854d0e', margin: '0 0 0.6rem' }}>
-                🚧 MODO DEMO — Acceso rápido sin backend
-              </p>
-              <div className="d-flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleDemo('admin')}
-                  style={{
-                    background:   'var(--color-dark)', color: 'white', border: 'none',
-                    borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-xs)',
-                    flex: 1,
-                  }}
-                >
-                  👤 Entrar como Admin
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleDemo('propietario')}
-                  style={{
-                    background:   'var(--color-primary)', color: 'white', border: 'none',
-                    borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-xs)',
-                    flex: 1,
-                  }}
-                >
-                  🏠 Entrar como Propietario
-                </Button>
-              </div>
-            </div>
 
             <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3" controlId="loginCorreo">
