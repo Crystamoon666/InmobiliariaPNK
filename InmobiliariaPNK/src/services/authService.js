@@ -22,9 +22,8 @@ export const loginUser = async ({ correo, password }) => {
   return response.data;
 };
 
-// ── Registro público de propietario ────────────────────────
 export const registerOwner = async (formData) => {
-  const response = await axios.post('/auth/register', formData);
+  const response = await axios.post('/auth/registro', formData);
   return response.data;
 };
 

@@ -4,14 +4,14 @@
  * TODO Fase 5: reemplazar mockProperties con propiedadService.getPublicas(filters)
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Container, Row, Col } from 'react-bootstrap';
 import PropertyCard   from '../../components/properties/PropertyCard';
 import SearchFilters  from '../../components/search/SearchFilters';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import EmptyState     from '../../components/ui/EmptyState';
-import { mockProperties } from '../../data/mockData';
+import { getPublicas } from '../../services/propiedadService';
 
 export default function PropiedadesLista() {
   const [searchParams] = useSearchParams();
@@ -21,17 +21,31 @@ export default function PropiedadesLista() {
     comuna:    searchParams.get('comuna')    || '',
     sector:    searchParams.get('sector')    || '',
   });
-  const [loading] = useState(false); // TODO: true mientras carga desde API
+  const [loading, setLoading] = useState(true);
+  const [propiedades, setPropiedades] = useState([]);
 
-  // Filtrado local sobre mock (cuando se conecte el backend, esto va a ser un fetch)
-  const filtered = useMemo(() => {
-    return mockProperties.filter(p => {
-      if (filters.tipo      && p.tipo      !== filters.tipo)                                        return false;
-      if (filters.provincia && p.provincia !== filters.provincia)                                   return false;
-      if (filters.comuna    && p.comuna    !== filters.comuna)                                      return false;
-      if (filters.sector    && !p.sector?.toLowerCase().includes(filters.sector.toLowerCase()))    return false;
-      return true;
-    });
+  useEffect(() => {
+    setLoading(true);
+    // Podemos enviar los filtros al backend o filtrar en frontend. 
+    // Como el getPublicas acepta params, enviamos los filtros válidos.
+    const params = {};
+    if (filters.tipo) params.tipo = filters.tipo;
+    if (filters.provincia) params.provincia = filters.provincia;
+    if (filters.comuna) params.comuna = filters.comuna;
+    // El sector podríamos filtrarlo localmente si la API no lo soporta de forma exacta, 
+    // pero lo enviaremos por si acaso y hacemos doble chequeo local.
+    
+    getPublicas(params)
+      .then(data => {
+        // Filtrado local adicional para 'sector' u otros (opcional, pero asegura resultados)
+        const localFiltered = data.filter(p => {
+          if (filters.sector && !p.sector?.toLowerCase().includes(filters.sector.toLowerCase())) return false;
+          return true;
+        });
+        setPropiedades(localFiltered);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   return (
@@ -59,7 +73,7 @@ export default function PropiedadesLista() {
             Propiedades disponibles
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 'var(--text-sm)' }}>
-            Región de Coquimbo · {filtered.length} propiedad{filtered.length !== 1 ? 'es' : ''} encontrada{filtered.length !== 1 ? 's' : ''}
+            Región de Coquimbo · {propiedades.length} propiedad{propiedades.length !== 1 ? 'es' : ''} encontrada{propiedades.length !== 1 ? 's' : ''}
           </p>
         </Container>
       </div>
@@ -99,7 +113,7 @@ export default function PropiedadesLista() {
           <Col lg={9}>
             {loading ? (
               <LoadingSpinner text="Cargando propiedades..." size="lg" />
-            ) : filtered.length === 0 ? (
+            ) : propiedades.length === 0 ? (
               <EmptyState
                 icon="🏠"
                 title="Sin propiedades"
@@ -113,7 +127,7 @@ export default function PropiedadesLista() {
                   gap:                 '1.5rem',
                 }}
               >
-                {filtered.map(property => (
+                {propiedades.map(property => (
                   <PropertyCard key={property.id} property={property} />
                 ))}
               </div>

@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
    */
   const login = async (credentials) => {
     const data = await loginUser(credentials);
-    const { token: newToken, user: newUser } = data.data;
+    const { token: newToken, usuario: newUser } = data;
     saveSession(newToken, newUser);
     setToken(newToken);
     setUser(newUser);

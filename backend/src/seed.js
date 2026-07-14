@@ -10,8 +10,8 @@ const seedDatabase = async () => {
 
     // 2. Generar contraseñas
     const salt = await bcrypt.genSalt(10);
-    const adminPassword = await bcrypt.hash('admin123', salt);
-    const userPassword = await bcrypt.hash('123456', salt);
+    const adminPassword = await bcrypt.hash('Test2026!', salt);
+    const userPassword = await bcrypt.hash('Test2026!', salt);
 
     // 3. Crear Usuarios
     console.log('Creando usuarios...');
@@ -87,9 +87,9 @@ const seedDatabase = async () => {
         dormitorios: 4,
         area_construida: 140.5,
         area_terreno: 300,
-        provincia: 'Santiago',
-        comuna: 'La Florida',
-        sector: 'Lo Cañas',
+        provincia: 'Elqui',
+        comuna: 'La Serena',
+        sector: 'El Milagro',
         bodega: true,
         estacionamiento: true,
         logia: true,
@@ -99,47 +99,47 @@ const seedDatabase = async () => {
         piscina: true,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/casa1.jpg', '/uploads/casainterior1.webp'])
       },
       {
         propietario_id: usuarios[2].id, // Carlos
         numero_bien_raiz: '9876-54',
         tipo: 'departamento',
-        descripcion: 'Moderno departamento a pasos del metro. Ideal para profesionales jóvenes o inversión.',
+        descripcion: 'Moderno departamento a pasos de la Avenida del Mar. Ideal para vacacionar o como inversión.',
         precio_clp: 85000000,
         precio_uf: 2950.0,
         banos: 1,
         dormitorios: 2,
         area_construida: 55,
         area_terreno: 55,
-        provincia: 'Santiago',
-        comuna: 'Ñuñoa',
-        sector: 'Plaza Egaña',
+        provincia: 'Elqui',
+        comuna: 'La Serena',
+        sector: 'Avenida del Mar',
         bodega: true,
         estacionamiento: true,
         logia: false,
         cocina_amoblada: true,
         antejardin: false,
         patio_trasero: false,
-        piscina: true, // Edificio tiene piscina
+        piscina: true,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/departamento1.png', '/uploads/deptointerior1.jpg'])
       },
       {
         propietario_id: usuarios[3].id, // Ana
         numero_bien_raiz: '4567-89',
         tipo: 'terreno',
-        descripcion: 'Sitio eriazo con excelente plusvalía y factibilidad de luz y agua. Ideal para construir la casa de tus sueños.',
+        descripcion: 'Sitio eriazo con excelente plusvalía y factibilidad de luz y agua. Ideal para construir la casa de tus sueños en el valle.',
         precio_clp: 45000000,
         precio_uf: 1560.0,
         banos: 0,
         dormitorios: 0,
         area_construida: 0,
         area_terreno: 1000,
-        provincia: 'Talagante',
-        comuna: 'Isla de Maipo',
-        sector: 'La Islita',
+        provincia: 'Elqui',
+        comuna: 'Vicuña',
+        sector: 'Ruta 41',
         bodega: false,
         estacionamiento: false,
         logia: false,
@@ -149,7 +149,7 @@ const seedDatabase = async () => {
         piscina: false,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/terreno1.jpg', '/uploads/terreno1-1.jpeg'])
       },
       {
         propietario_id: usuarios[1].id, // María
@@ -162,9 +162,9 @@ const seedDatabase = async () => {
         dormitorios: 3,
         area_construida: 120,
         area_terreno: 250,
-        provincia: 'Santiago',
-        comuna: 'Macul',
-        sector: 'Avenida Macul',
+        provincia: 'Elqui',
+        comuna: 'Coquimbo',
+        sector: 'Sindempart',
         bodega: true,
         estacionamiento: true,
         logia: false,
@@ -174,24 +174,24 @@ const seedDatabase = async () => {
         piscina: false,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/casa2.jpg', '/uploads/casainterior2.jpg'])
       },
       {
         propietario_id: usuarios[4].id, // Pedro
         numero_bien_raiz: '1122-33',
         tipo: 'departamento',
-        descripcion: 'Penthouse con vista panorámica, terraza amplia y finas terminaciones.',
+        descripcion: 'Penthouse con vista panorámica, terraza amplia y finas terminaciones frente al mar.',
         precio_clp: 350000000,
         precio_uf: 12000.0,
         banos: 3,
         dormitorios: 3,
         area_construida: 180,
         area_terreno: 180,
-        provincia: 'Santiago',
-        comuna: 'Providencia',
-        sector: 'El Bosque',
+        provincia: 'Elqui',
+        comuna: 'Coquimbo',
+        sector: 'Peñuelas',
         bodega: true,
-        estacionamiento: true, // 2 estacionamientos (representado como true)
+        estacionamiento: true,
         logia: true,
         cocina_amoblada: true,
         antejardin: false,
@@ -199,7 +199,7 @@ const seedDatabase = async () => {
         piscina: false,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/depto2.webp', '/uploads/deptointerior2.webp'])
       },
       {
         propietario_id: usuarios[2].id, // Carlos
@@ -212,9 +212,9 @@ const seedDatabase = async () => {
         dormitorios: 0,
         area_construida: 0,
         area_terreno: 5000,
-        provincia: 'Melipilla',
-        comuna: 'María Pinto',
-        sector: 'Bollenar',
+        provincia: 'Limarí',
+        comuna: 'Ovalle',
+        sector: 'Huamalata',
         bodega: false,
         estacionamiento: false,
         logia: false,
@@ -224,7 +224,7 @@ const seedDatabase = async () => {
         piscina: false,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/terreno2.jpg', '/uploads/terreno2-1.jpg'])
       },
       {
         propietario_id: usuarios[3].id, // Ana
@@ -237,9 +237,9 @@ const seedDatabase = async () => {
         dormitorios: 3,
         area_construida: 90,
         area_terreno: 200,
-        provincia: 'Santiago',
-        comuna: 'Maipú',
-        sector: 'Ciudad Satélite',
+        provincia: 'Limarí',
+        comuna: 'Ovalle',
+        sector: 'Sector Centro',
         bodega: false,
         estacionamiento: true,
         logia: true,
@@ -249,22 +249,22 @@ const seedDatabase = async () => {
         piscina: false,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/casa3.jpg', '/uploads/casainterior3.jpg'])
       },
       {
         propietario_id: usuarios[4].id, // Pedro
         numero_bien_raiz: '2244-66',
         tipo: 'departamento',
-        descripcion: 'Estudio ideal para estudiantes, a cuadras de universidades.',
+        descripcion: 'Estudio ideal para estudiantes, a cuadras del campus universitario.',
         precio_clp: 55000000,
         precio_uf: 1900.0,
         banos: 1,
         dormitorios: 1,
         area_construida: 32,
         area_terreno: 32,
-        provincia: 'Santiago',
-        comuna: 'Santiago Centro',
-        sector: 'Barrio República',
+        provincia: 'Elqui',
+        comuna: 'La Serena',
+        sector: 'Cerro Grande',
         bodega: false,
         estacionamiento: false,
         logia: false,
@@ -274,7 +274,7 @@ const seedDatabase = async () => {
         piscina: false,
         solicitar_visita: false,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/depto3.jpg', '/uploads/deptointerior3.webp'])
       },
       {
         propietario_id: usuarios[1].id, // María
@@ -287,9 +287,9 @@ const seedDatabase = async () => {
         dormitorios: 4,
         area_construida: 150,
         area_terreno: 5000,
-        provincia: 'Maipo',
-        comuna: 'Buin',
-        sector: 'Alto Jahuel',
+        provincia: 'Choapa',
+        comuna: 'Illapel',
+        sector: 'Valle Hermoso',
         bodega: true,
         estacionamiento: true,
         logia: true,
@@ -299,32 +299,32 @@ const seedDatabase = async () => {
         piscina: true,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/casa4.jpg', '/uploads/casainterior4.jpg'])
       },
       {
         propietario_id: usuarios[3].id, // Ana
         numero_bien_raiz: '8811-22',
-        tipo: 'departamento',
-        descripcion: 'Departamento amplio estilo mariposa. El edificio cuenta con quinchos, gimnasio y lavandería.',
+        tipo: 'terreno',
+        descripcion: 'Amplio terreno con vista privilegiada al valle.',
         precio_clp: 110000000,
         precio_uf: 3800.0,
-        banos: 2,
-        dormitorios: 2,
-        area_construida: 65,
-        area_terreno: 65,
-        provincia: 'Santiago',
-        comuna: 'San Miguel',
-        sector: 'El Llano',
-        bodega: true,
-        estacionamiento: true,
+        banos: 0,
+        dormitorios: 0,
+        area_construida: 0,
+        area_terreno: 6500,
+        provincia: 'Choapa',
+        comuna: 'Salamanca',
+        sector: 'Chalinga',
+        bodega: false,
+        estacionamiento: false,
         logia: false,
-        cocina_amoblada: true,
+        cocina_amoblada: false,
         antejardin: false,
         patio_trasero: false,
-        piscina: true,
+        piscina: false,
         solicitar_visita: true,
         estado: 'publicada',
-        fotos: []
+        fotos: JSON.stringify(['/uploads/terreno3.jpg', '/uploads/terreno3-1.jpg'])
       }
     ]);
 

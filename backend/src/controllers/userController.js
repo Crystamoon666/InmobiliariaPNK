@@ -51,10 +51,15 @@ const createUser = async (req, res) => {
       foto_url = `/uploads/${req.file.filename}`;
     }
 
-    // Verificar si existe
-    const existe = await Usuario.findOne({ where: { correo } });
-    if (existe) {
+    // Verificar si correo o RUT ya existen
+    const existeCorreo = await Usuario.findOne({ where: { correo } });
+    if (existeCorreo) {
       return res.status(400).json({ mensaje: 'El correo ya está registrado.' });
+    }
+    
+    const existeRut = await Usuario.findOne({ where: { rut } });
+    if (existeRut) {
+      return res.status(400).json({ mensaje: 'El RUT ya está registrado.' });
     }
 
     // Encriptar password
@@ -74,6 +79,9 @@ const createUser = async (req, res) => {
 
   } catch (error) {
     console.error('Error al crear usuario:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ mensaje: 'El RUT o Correo ya están en uso.' });
+    }
     res.status(500).json({ mensaje: 'Error interno del servidor.' });
   }
 };
@@ -94,6 +102,17 @@ const updateUser = async (req, res) => {
     }
 
     const { rut, nombre_completo, fecha_nacimiento, correo, password, sexo, telefono, rol, estado } = req.body;
+    
+    // Verificar unicidad de correo y RUT si se están cambiando
+    if (correo && correo !== usuario.correo) {
+      const existeCorreo = await Usuario.findOne({ where: { correo } });
+      if (existeCorreo) return res.status(400).json({ mensaje: 'El correo ya está registrado por otro usuario.' });
+    }
+    if (rut && rut !== usuario.rut) {
+      const existeRut = await Usuario.findOne({ where: { rut } });
+      if (existeRut) return res.status(400).json({ mensaje: 'El RUT ya está registrado por otro usuario.' });
+    }
+
     let updateData = { rut, nombre_completo, fecha_nacimiento, correo, sexo, telefono };
 
     // Si es admin, puede cambiar rol y estado
@@ -124,6 +143,9 @@ const updateUser = async (req, res) => {
 
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ mensaje: 'El RUT o Correo ya están en uso.' });
+    }
     res.status(500).json({ mensaje: 'Error interno del servidor.' });
   }
 };

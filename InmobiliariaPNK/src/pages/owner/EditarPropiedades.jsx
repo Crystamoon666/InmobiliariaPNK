@@ -4,40 +4,59 @@
  * TODO Fase 5: reemplazar mockProperties con propiedadService.getById(id)
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Spinner, Container } from 'react-bootstrap';
 import { PageHeader } from '../../components/ui';
 import { alertSuccess, alertError } from '../../components/ui/Alerts';
 import PropertyFormModal from '../../components/properties/PropertyFormModal';
-import { mockProperties } from '../../data/mockData';
+import { getById, updatePropiedad } from '../../services/propiedadService';
 
 export default function EditarPropiedades() {
   const { id }    = useParams();
   const navigate  = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [propiedad, setPropiedad] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // TODO Fase 5: reemplazar con propiedadService.getById(id)
-  const propiedad = mockProperties.find(p => p.id === Number(id));
+  useEffect(() => {
+    getById(id)
+      .then(data => setPropiedad(data))
+      .catch(err => {
+        console.error(err);
+        setPropiedad(null);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3">Cargando datos de la propiedad...</p>
+      </Container>
+    );
+  }
 
   if (!propiedad) {
     return (
       <div className="text-center py-5">
         <p style={{ fontSize: '3rem' }}>🔍</p>
         <h3>Propiedad no encontrada</h3>
-        <button onClick={() => navigate('/propietario/mis-propiedades')}>← Volver</button>
+        <button className="btn btn-outline-primary mt-3" onClick={() => navigate('/propietario/mis-propiedades')}>← Volver</button>
       </div>
     );
   }
 
-  const handleSave = async (form) => {
+  const handleSave = async (formObj) => {
     setSaving(true);
     try {
-      // TODO Fase 5: await propiedadService.updatePropiedad(id, form)
-      await new Promise(r => setTimeout(r, 800));
+      await updatePropiedad(id, formObj);
       await alertSuccess('¡Cambios guardados!', 'Tu propiedad fue actualizada correctamente.');
       navigate('/propietario/mis-propiedades');
-    } catch {
-      await alertError('Error', 'No se pudo actualizar la propiedad.');
+    } catch (err) {
+      console.error(err);
+      await alertError('Error', err.response?.data?.message || 'No se pudo actualizar la propiedad.');
     } finally {
       setSaving(false);
     }

@@ -13,7 +13,9 @@
 import { useState, useEffect } from 'react';
 import { Modal, Form, Row, Col, Button } from 'react-bootstrap';
 import { PrimaryButton, PhotoUploader } from '../ui';
+import { alertError } from '../ui/Alerts';
 import { UBICACIONES } from '../../data/mockData';
+import { getImageUrl } from '../../utils/imageUtils';
 
 /**
  * Formatea el Rol de Avaluó del SII: solo números y un guión separador.
@@ -64,16 +66,45 @@ const EMPTY = {
 
 export default function PropertyFormModal({ show, onHide, onSave, initial = null, loading = false, isAdmin = false, propietarios = [] }) {
   const [form, setForm] = useState(EMPTY);
+  const [validated, setValidated] = useState(false);
+  const [ufValue, setUfValue] = useState(38000); // Valor referencial de fallback
+
+  // Obtener valor actual de la UF desde mindicador.cl
+  useEffect(() => {
+    if (show) {
+      fetch('https://mindicador.cl/api/uf')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.serie && data.serie.length > 0 && data.serie[0].valor) {
+            setUfValue(data.serie[0].valor);
+          }
+        })
+        .catch(err => console.error('Error obteniendo UF:', err));
+    }
+  }, [show]);
 
   useEffect(() => {
     if (initial) {
-      const fotosIniciales = initial.foto_url
-        ? [{ preview: initial.foto_url, url: initial.foto_url }]
-        : (initial.fotos || []);
-      setForm({ ...EMPTY, ...initial, fotos: fotosIniciales });
+      // Normalizar fotos: pueden venir como strings ["/uploads/..."] o como objetos {url, preview}
+      let fotosIniciales = [];
+      if (initial.fotos && Array.isArray(initial.fotos)) {
+        fotosIniciales = initial.fotos.map(f => {
+          if (typeof f === 'string') {
+            const fullUrl = getImageUrl(f);
+            return { url: f, preview: fullUrl };
+          }
+          // ya es objeto { url, preview }
+          return { ...f, preview: getImageUrl(f.url || f.preview) || f.preview };
+        });
+      } else if (initial.foto_url) {
+        const fullUrl = getImageUrl(initial.foto_url);
+        fotosIniciales = [{ url: initial.foto_url, preview: fullUrl }];
+      }
+      setForm({ ...EMPTY, ...initial, fotos: fotosIniciales, propietario_id: String(initial.propietario_id || '') });
     } else {
       setForm(EMPTY);
     }
+    setValidated(false);
   }, [initial, show]);
 
   const comunas = form.provincia ? UBICACIONES[form.provincia] || [] : [];
@@ -81,11 +112,30 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
   const handleChange = (field, value) => {
     // Aplicar formateo especial al Rol de Avaluó
     if (field === 'numero_bien_raiz') value = formatRol(value);
-    setForm(prev => ({
-      ...prev,
-      [field]: value,
-      ...(field === 'provincia' ? { comuna: '' } : {}),
-    }));
+    
+    // Forzar que precio_clp, dormitorios y banos sean solo enteros positivos
+    if (['precio_clp', 'dormitorios', 'banos'].includes(field)) {
+      value = value.replace(/[^0-9]/g, '');
+    }
+
+    setForm(prev => {
+      const nextForm = {
+        ...prev,
+        [field]: value,
+        ...(field === 'provincia' ? { comuna: '' } : {}),
+      };
+
+      // Cálculo automático de UF
+      if (field === 'precio_clp') {
+        if (value && ufValue > 0) {
+          nextForm.precio_uf = (Number(value) / ufValue).toFixed(2);
+        } else {
+          nextForm.precio_uf = '';
+        }
+      }
+
+      return nextForm;
+    });
   };
 
   const handleCheck = (field) =>
@@ -95,16 +145,66 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validarRol(form.numero_bien_raiz)) {
-      setRolError('Formato inválido. Ejemplo: 1234-56 (manzana-predial, solo números).');
+    const formEl = e.currentTarget;
+    if (formEl.checkValidity() === false) {
+      e.stopPropagation();
+      setValidated(true);
+      alertError('Campos incompletos o inválidos', 'Por favor, completa correctamente todos los campos obligatorios antes de continuar.');
       return;
     }
-    setRolError('');
+    setValidated(true);
+
+    const erroresValidacion = [];
+
+    if (!validarRol(form.numero_bien_raiz)) {
+      erroresValidacion.push('Formato de Rol inválido. Ejemplo: 1234-56 (manzana-predial, solo números).');
+      setRolError('Formato inválido.');
+    } else {
+      setRolError('');
+    }
+
+    if (Number(form.precio_clp) <= 0) {
+      erroresValidacion.push('El precio en CLP debe ser mayor a 0.');
+    }
+
+    if (form.tipo !== 'terreno') {
+      if (Number(form.dormitorios) <= 0) erroresValidacion.push('Debe tener al menos 1 dormitorio.');
+      if (Number(form.banos) <= 0) erroresValidacion.push('Debe tener al menos 1 baño.');
+      
+      const ac = Number(form.area_construida);
+      const at = Number(form.area_terreno);
+      if (ac <= 0) erroresValidacion.push('El área construida debe ser mayor a 0.');
+      if (at <= 0) erroresValidacion.push('El área de terreno debe ser mayor a 0.');
+      if (ac > at) erroresValidacion.push('Los metros construidos no pueden ser mayores a los metros del terreno.');
+    } else {
+      if (Number(form.area_terreno) <= 0) erroresValidacion.push('El área de terreno debe ser mayor a 0.');
+    }
+
+    if (!form.fotos || form.fotos.length === 0) {
+      erroresValidacion.push('Debe adjuntar al menos 1 fotografía.');
+    }
+
+    if (erroresValidacion.length > 0) {
+      alertError('Errores de validación', erroresValidacion.join('\n'));
+      return;
+    }
+
     onSave(form);
   };
 
   const labelStyle = { fontWeight: 600, fontSize: 'var(--text-sm)' };
   const inputStyle = { borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' };
+
+  const ac = Number(form.area_construida);
+  const at = Number(form.area_terreno);
+
+  // Evaluar en tiempo real si son inválidos
+  const showRolError = (validated || form.numero_bien_raiz.length > 0) && !validarRol(form.numero_bien_raiz);
+  const showPrecioError = (validated || form.precio_clp.toString().length > 0) && Number(form.precio_clp) <= 0;
+  const showDormError = form.tipo !== 'terreno' && (validated || form.dormitorios.toString().length > 0) && Number(form.dormitorios) <= 0;
+  const showBanosError = form.tipo !== 'terreno' && (validated || form.banos.toString().length > 0) && Number(form.banos) <= 0;
+  const showACError = form.tipo !== 'terreno' && (validated || form.area_construida.toString().length > 0) && (ac <= 0 || ac > at);
+  const showATError = (validated || form.area_terreno.toString().length > 0) && (at <= 0 || (form.tipo !== 'terreno' && ac > at));
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered scrollable>
@@ -115,7 +215,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
       </Modal.Header>
 
       <Modal.Body style={{ padding: '1.5rem' }}>
-        <Form id="propertyForm" onSubmit={handleSubmit}>
+        <Form id="propertyForm" noValidate validated={validated} onSubmit={handleSubmit}>
 
           {/* ── Identificación ───────────────────────────── */}
           <div style={{ background: 'var(--color-gray-50)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.25rem', border: '1px solid var(--color-gray-200)' }}>
@@ -141,6 +241,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
                         </option>
                       ))}
                     </Form.Select>
+                    <Form.Control.Feedback type="invalid">Debe asignar un propietario.</Form.Control.Feedback>
                   </Form.Group>
                 </Col>
               </Row>
@@ -149,7 +250,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
             <Row className="g-3">
               <Col xs={12} sm={6}>
                 <Form.Group controlId="pRolAvaluo">
-                  <Form.Label style={labelStyle}>Rol de Avaluó (SII) *</Form.Label>
+                  <Form.Label style={labelStyle}>Rol de Avalúo (SII) *</Form.Label>
                   <Form.Control
                     type="text"
                     placeholder="Ej: 1234-56"
@@ -158,13 +259,13 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
                     required
                     maxLength={12}
                     inputMode="numeric"
-                    isInvalid={!!rolError}
+                    isInvalid={showRolError || !!rolError}
                     style={inputStyle}
                   />
                   <Form.Control.Feedback type="invalid" style={{ fontSize: 'var(--text-xs)' }}>
-                    {rolError}
+                    {rolError || 'Requerido y debe tener formato válido (Ej: 1234-56).'}
                   </Form.Control.Feedback>
-                  {!rolError && (
+                  {!rolError && !validated && (
                     <Form.Text style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
                       Número de Manzana - Número Predial (solo dígitos)
                     </Form.Text>
@@ -192,9 +293,11 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
               value={form.descripcion}
               onChange={e => handleChange('descripcion', e.target.value)}
               required
+              maxLength={1000}
               placeholder="Describe brevemente la propiedad..."
               style={{ ...inputStyle, resize: 'vertical' }}
             />
+            <Form.Control.Feedback type="invalid">La descripción es obligatoria.</Form.Control.Feedback>
           </Form.Group>
 
           {/* ── Precios ──────────────────────────────────── */}
@@ -203,23 +306,25 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
               <Form.Group controlId="pCLP">
                 <Form.Label style={labelStyle}>Precio CLP *</Form.Label>
                 <Form.Control
-                  type="number" min="0"
+                  type="text" inputMode="numeric"
                   value={form.precio_clp}
                   onChange={e => handleChange('precio_clp', e.target.value)}
                   required placeholder="Ej: 95000000"
                   style={inputStyle}
+                  isInvalid={showPrecioError}
                 />
+                <Form.Control.Feedback type="invalid">Precio requerido y debe ser mayor a 0.</Form.Control.Feedback>
               </Form.Group>
             </Col>
             <Col xs={12} sm={6}>
               <Form.Group controlId="pUF">
                 <Form.Label style={labelStyle}>Precio UF</Form.Label>
                 <Form.Control
-                  type="number" min="0" step="0.01"
+                  type="text"
                   value={form.precio_uf}
-                  onChange={e => handleChange('precio_uf', e.target.value)}
-                  placeholder="Ej: 2650"
-                  style={inputStyle}
+                  readOnly
+                  placeholder="Auto calculado"
+                  style={{ ...inputStyle, backgroundColor: 'var(--color-gray-100)', color: 'var(--color-gray-600)' }}
                 />
               </Form.Group>
             </Col>
@@ -231,32 +336,37 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
               <Col xs={6} sm={3}>
                 <Form.Group controlId="pDorm">
                   <Form.Label style={labelStyle}>Dormitorios</Form.Label>
-                  <Form.Control type="number" min="0" value={form.dormitorios} onChange={e => handleChange('dormitorios', e.target.value)} style={inputStyle} />
+                  <Form.Control type="text" inputMode="numeric" maxLength={2} value={form.dormitorios} onChange={e => handleChange('dormitorios', e.target.value)} style={inputStyle} required isInvalid={showDormError} />
+                  <Form.Control.Feedback type="invalid">Requerido, &gt; 0.</Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col xs={6} sm={3}>
                 <Form.Group controlId="pBanos">
                   <Form.Label style={labelStyle}>Baños</Form.Label>
-                  <Form.Control type="number" min="0" value={form.banos} onChange={e => handleChange('banos', e.target.value)} style={inputStyle} />
+                  <Form.Control type="text" inputMode="numeric" maxLength={2} value={form.banos} onChange={e => handleChange('banos', e.target.value)} style={inputStyle} required isInvalid={showBanosError} />
+                  <Form.Control.Feedback type="invalid">Requerido, &gt; 0.</Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col xs={6} sm={3}>
                 <Form.Group controlId="pAC">
                   <Form.Label style={labelStyle}>Construido (m²)</Form.Label>
-                  <Form.Control type="number" min="0" value={form.area_construida} onChange={e => handleChange('area_construida', e.target.value)} style={inputStyle} />
+                  <Form.Control type="number" min="0" step="0.01" value={form.area_construida} onChange={e => handleChange('area_construida', e.target.value)} style={inputStyle} required isInvalid={showACError} />
+                  <Form.Control.Feedback type="invalid">Debe ser &gt; 0 y ≤ Terreno.</Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col xs={6} sm={3}>
                 <Form.Group controlId="pAT">
                   <Form.Label style={labelStyle}>Terreno (m²)</Form.Label>
-                  <Form.Control type="number" min="0" value={form.area_terreno} onChange={e => handleChange('area_terreno', e.target.value)} style={inputStyle} />
+                  <Form.Control type="number" min="0" step="0.01" value={form.area_terreno} onChange={e => handleChange('area_terreno', e.target.value)} style={inputStyle} required isInvalid={showATError} />
+                  <Form.Control.Feedback type="invalid">Debe ser &gt; 0 y ≥ Construido.</Form.Control.Feedback>
                 </Form.Group>
               </Col>
             </Row>
           ) : (
             <Form.Group className="mb-3" controlId="pATTerreno">
               <Form.Label style={labelStyle}>Superficie total (m²)</Form.Label>
-              <Form.Control type="number" min="0" value={form.area_terreno} onChange={e => handleChange('area_terreno', e.target.value)} style={inputStyle} />
+              <Form.Control type="number" min="0" step="0.01" value={form.area_terreno} onChange={e => handleChange('area_terreno', e.target.value)} style={inputStyle} required isInvalid={showATError} />
+              <Form.Control.Feedback type="invalid">Debe ser mayor a 0.</Form.Control.Feedback>
             </Form.Group>
           )}
 
@@ -269,6 +379,7 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
                   <option value="">Seleccionar</option>
                   {Object.keys(UBICACIONES).map(p => <option key={p} value={p}>{p}</option>)}
                 </Form.Select>
+                <Form.Control.Feedback type="invalid">Provincia requerida.</Form.Control.Feedback>
               </Form.Group>
             </Col>
             <Col xs={12} sm={4}>
@@ -278,12 +389,13 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
                   <option value="">Seleccionar</option>
                   {comunas.map(c => <option key={c} value={c}>{c}</option>)}
                 </Form.Select>
+                <Form.Control.Feedback type="invalid">Comuna requerida.</Form.Control.Feedback>
               </Form.Group>
             </Col>
             <Col xs={12} sm={4}>
               <Form.Group controlId="pSector">
                 <Form.Label style={labelStyle}>Sector</Form.Label>
-                <Form.Control value={form.sector} onChange={e => handleChange('sector', e.target.value)} placeholder="Ej: El Milagro" style={inputStyle} />
+                <Form.Control value={form.sector} onChange={e => handleChange('sector', e.target.value)} maxLength={100} placeholder="Ej: El Milagro" style={inputStyle} />
               </Form.Group>
             </Col>
           </Row>
@@ -343,9 +455,12 @@ export default function PropertyFormModal({ show, onHide, onSave, initial = null
               background:   'var(--color-gray-50)',
               borderRadius: 'var(--radius-md)',
               padding:      '1rem',
-              border:       '1px solid var(--color-gray-200)',
+              border:       (validated && form.fotos.length === 0) ? '1px solid var(--color-danger)' : '1px solid var(--color-gray-200)',
             }}
           >
+            {validated && form.fotos.length === 0 && (
+              <p style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Debe adjuntar al menos 1 fotografía.</p>
+            )}
             <PhotoUploader
               photos={form.fotos}
               onChange={fotos => setForm(prev => ({ ...prev, fotos }))}

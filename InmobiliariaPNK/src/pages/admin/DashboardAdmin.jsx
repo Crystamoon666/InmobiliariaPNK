@@ -4,17 +4,13 @@
  * TODO Fase 5: reemplazar mocks con llamadas a userService y propiedadService.
  */
 
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Card, Button } from 'react-bootstrap';
+import { Row, Col, Card, Button, Spinner } from 'react-bootstrap';
 import { PageHeader } from '../../components/ui';
 import useAuth from '../../hooks/useAuth';
-import { mockProperties } from '../../data/mockData';
-
-const MOCK_USERS = [
-  { id: 1, nombre_completo: 'María González', correo: 'maria@demo.cl', rol: 'propietario', estado: 'activo' },
-  { id: 2, nombre_completo: 'Carlos Pérez',   correo: 'carlos@demo.cl', rol: 'propietario', estado: 'pendiente' },
-  { id: 3, nombre_completo: 'Ana López',       correo: 'ana@demo.cl',   rol: 'propietario', estado: 'activo' },
-];
+import { getAll as getAllUsers } from '../../services/userService';
+import { getAllAdmin } from '../../services/propiedadService';
 
 const StatCard = ({ icon, value, label, color, onClick }) => (
   <Card
@@ -47,10 +43,33 @@ export default function DashboardAdmin() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const totalPropiedades = mockProperties.length;
-  const totalUsuarios    = MOCK_USERS.length;
-  const pendientes       = MOCK_USERS.filter(u => u.estado === 'pendiente').length;
-  const publicadas       = mockProperties.filter(p => p.estado === 'publicada').length;
+  const [usuarios, setUsuarios] = useState([]);
+  const [propiedades, setPropiedades] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      getAllUsers().catch(() => []),
+      getAllAdmin().catch(() => [])
+    ]).then(([usersData, propsData]) => {
+      setUsuarios(usersData);
+      setPropiedades(propsData);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const totalPropiedades = propiedades.length;
+  const totalUsuarios    = usuarios.length;
+  const pendientes       = usuarios.filter(u => u.estado === 'pendiente').length;
+  const publicadas       = propiedades.filter(p => p.estado === 'publicada').length;
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3">Cargando métricas...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -83,7 +102,7 @@ export default function DashboardAdmin() {
               <h5 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '1rem' }}>
                 👥 Últimos propietarios
               </h5>
-              {MOCK_USERS.slice(0, 3).map(u => (
+              {usuarios.slice(0, 3).map(u => (
                 <div key={u.id} className="d-flex justify-content-between align-items-center py-2" style={{ borderBottom: '1px solid var(--color-gray-300)' }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: 600, fontSize: 'var(--text-sm)' }}>{u.nombre_completo}</p>
@@ -112,7 +131,7 @@ export default function DashboardAdmin() {
               <h5 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '1rem' }}>
                 🏠 Últimas propiedades
               </h5>
-              {mockProperties.slice(0, 3).map(p => (
+              {propiedades.slice(0, 3).map(p => (
                 <div key={p.id} className="d-flex justify-content-between align-items-center py-2" style={{ borderBottom: '1px solid var(--color-gray-300)' }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: 600, fontSize: 'var(--text-sm)' }}>{p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1)} en {p.comuna}</p>

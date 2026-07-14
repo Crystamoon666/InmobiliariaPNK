@@ -4,20 +4,44 @@
  * TODO Fase 5: reemplazar mockProperties con propiedadService.getAllAdmin()
  */
 
-import { useState } from 'react';
-import { Table, Button, Form } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Table, Button, Form, Spinner } from 'react-bootstrap';
 import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
-import { alertConfirm, alertSuccess } from '../../components/ui/Alerts';
+import { alertConfirm, alertSuccess, alertError } from '../../components/ui/Alerts';
 import PropertyFormModal from '../../components/properties/PropertyFormModal';
-import { mockProperties, MOCK_USERS } from '../../data/mockData';
+import * as propiedadService from '../../services/propiedadService';
+import * as userService from '../../services/userService';
 
 const ESTADOS = ['publicada', 'pausada', 'eliminada'];
 
 export default function AdministrarpPropiedades() {
-  const [propiedades, setPropiedades] = useState(mockProperties);
+  const [propiedades, setPropiedades] = useState([]);
+  const [propietarios, setPropietarios] = useState([]);
   const [showModal,   setShowModal]   = useState(false);
   const [editData,    setEditData]    = useState(null);
   const [saving,      setSaving]      = useState(false);
+  const [loading,     setLoading]     = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [propsData, usersData] = await Promise.all([
+        propiedadService.getAllAdmin(),
+        userService.getAll()
+      ]);
+      setPropiedades(propsData);
+      setPropietarios(usersData.filter(u => u.rol === 'propietario'));
+    } catch (error) {
+      console.error(error);
+      alertError('Error', 'No se pudieron cargar los datos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const formatCLP = (n) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
@@ -25,21 +49,21 @@ export default function AdministrarpPropiedades() {
   const openCreate = () => { setEditData(null); setShowModal(true); };
   const openEdit   = (p)  => { setEditData(p);   setShowModal(true); };
 
-  const handleSave = async (form) => {
+  const handleSave = async (formObj) => {
     setSaving(true);
     try {
-      await new Promise(r => setTimeout(r, 600));
       if (editData) {
-        // TODO Fase 5: propiedadService.updatePropiedad(editData.id, form)
-        setPropiedades(prev => prev.map(p => p.id === editData.id ? { ...p, ...form } : p));
+        await propiedadService.updatePropiedad(editData.id, formObj);
         await alertSuccess('¡Propiedad actualizada!', 'Los cambios fueron guardados.');
       } else {
-        // TODO Fase 5: propiedadService.createPropiedad(form)
-        const newProp = { id: Date.now(), ...form, estado: 'publicada', fecha_publicacion: new Date().toISOString().split('T')[0] };
-        setPropiedades(prev => [...prev, newProp]);
+        await propiedadService.createPropiedad(formObj);
         await alertSuccess('¡Propiedad creada!', 'La propiedad fue publicada.');
       }
       setShowModal(false);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      await alertError('Error', err.response?.data?.message || 'No se pudo guardar la propiedad.');
     } finally {
       setSaving(false);
     }
@@ -48,17 +72,25 @@ export default function AdministrarpPropiedades() {
   const handleEstado = async (prop, nuevoEstado) => {
     const ok = await alertConfirm('¿Cambiar estado?', `Se cambiará el estado a "${nuevoEstado}".`);
     if (!ok) return;
-    // TODO Fase 5: propiedadService.changeEstado(prop.id, nuevoEstado)
-    setPropiedades(prev => prev.map(p => p.id === prop.id ? { ...p, estado: nuevoEstado } : p));
-    await alertSuccess('Estado actualizado', `La propiedad ahora está "${nuevoEstado}".`);
+    try {
+      await propiedadService.changeEstado(prop.id, nuevoEstado);
+      setPropiedades(prev => prev.map(p => p.id === prop.id ? { ...p, estado: nuevoEstado } : p));
+      await alertSuccess('Estado actualizado', `La propiedad ahora está "${nuevoEstado}".`);
+    } catch (err) {
+      await alertError('Error', 'No se pudo actualizar el estado.');
+    }
   };
 
   const handleDelete = async (prop) => {
     const ok = await alertConfirm('¿Eliminar propiedad?', 'Esta acción no se puede deshacer.', 'Sí, eliminar');
     if (!ok) return;
-    // TODO Fase 5: propiedadService.deletePropiedad(prop.id)
-    setPropiedades(prev => prev.filter(p => p.id !== prop.id));
-    await alertSuccess('Eliminada', 'La propiedad fue eliminada.');
+    try {
+      await propiedadService.deletePropiedad(prop.id);
+      setPropiedades(prev => prev.filter(p => p.id !== prop.id));
+      await alertSuccess('Eliminada', 'La propiedad fue eliminada.');
+    } catch (err) {
+      await alertError('Error', 'No se pudo eliminar la propiedad.');
+    }
   };
 
   return (
@@ -73,7 +105,12 @@ export default function AdministrarpPropiedades() {
         }
       />
 
-      {propiedades.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando propiedades...</p>
+        </div>
+      ) : propiedades.length === 0 ? (
         <EmptyState icon="🏠" title="Sin propiedades" message="No hay propiedades registradas." />
       ) : (
         <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
@@ -143,7 +180,7 @@ export default function AdministrarpPropiedades() {
         initial={editData}
         loading={saving}
         isAdmin={true}
-        propietarios={MOCK_USERS.filter(u => u.rol === 'propietario')}
+        propietarios={propietarios}
       />
     </div>
   );

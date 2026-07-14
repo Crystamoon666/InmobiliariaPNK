@@ -40,7 +40,7 @@ export default function SearchFilters({ onSearch, compact = false }) {
     <Form onSubmit={handleSubmit}>
       <Row className={compact ? 'g-2 align-items-end' : 'g-3'}>
         {/* Tipo de propiedad */}
-        <Col xs={12} md={compact ? 'auto' : 6} lg={compact ? 'auto' : 3}>
+        <Col xs={12} md={compact ? 'auto' : 12} lg={compact ? 'auto' : 12}>
           <Form.Group>
             {!compact && <Form.Label style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Tipo</Form.Label>}
             <Form.Select
@@ -57,7 +57,7 @@ export default function SearchFilters({ onSearch, compact = false }) {
         </Col>
 
         {/* Provincia */}
-        <Col xs={12} md={compact ? 'auto' : 6} lg={compact ? 'auto' : 3}>
+        <Col xs={12} md={compact ? 'auto' : 12} lg={compact ? 'auto' : 12}>
           <Form.Group>
             {!compact && <Form.Label style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Provincia</Form.Label>}
             <Form.Select
@@ -74,7 +74,7 @@ export default function SearchFilters({ onSearch, compact = false }) {
         </Col>
 
         {/* Comuna */}
-        <Col xs={12} md={compact ? 'auto' : 6} lg={compact ? 'auto' : 3}>
+        <Col xs={12} md={compact ? 'auto' : 12} lg={compact ? 'auto' : 12}>
           <Form.Group>
             {!compact && <Form.Label style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Comuna</Form.Label>}
             <Form.Select
@@ -92,7 +92,7 @@ export default function SearchFilters({ onSearch, compact = false }) {
         </Col>
 
         {/* Sector (texto libre) */}
-        <Col xs={12} md={compact ? 'auto' : 6} lg={compact ? 'auto' : 3}>
+        <Col xs={12} md={compact ? 'auto' : 12} lg={compact ? 'auto' : 12}>
           <Form.Group>
             {!compact && <Form.Label style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Sector</Form.Label>}
             <Form.Control

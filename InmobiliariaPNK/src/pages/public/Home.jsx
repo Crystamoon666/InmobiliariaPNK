@@ -5,10 +5,11 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Container, Row, Col, Button, Spinner } from 'react-bootstrap';
 import FeaturedCarousel from '../../components/properties/FeaturedCarousel';
 import SearchFilters    from '../../components/search/SearchFilters';
-import { mockProperties } from '../../data/mockData';
+import { getPublicas }  from '../../services/propiedadService';
 
 // Imagen de hero (Unsplash — propiedad libre de uso)
 const HERO_IMG = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&q=80';
@@ -22,6 +23,17 @@ const STATS = [
 
 export default function Home() {
   const navigate = useNavigate();
+  const [propiedades, setPropiedades] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPublicas()
+      .then(data => {
+        setPropiedades(data);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleSearch = (filters) => {
     const params = new URLSearchParams();
@@ -157,7 +169,13 @@ export default function Home() {
       {/* ── CARRUSEL PROPIEDADES DESTACADAS ─────────────────── */}
       <section className="section-white">
         <Container style={{ maxWidth: 'var(--container-max)' }}>
-          <FeaturedCarousel properties={mockProperties} />
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+            </div>
+          ) : (
+            <FeaturedCarousel properties={propiedades} />
+          )}
           <div className="text-center mt-4">
             <Button
               variant="outline-primary"

@@ -69,34 +69,75 @@ const EMPTY = {
 export default function Registro() {
   const navigate = useNavigate();
   const [form,    setForm]    = useState(EMPTY);
-  const [error,   setError]   = useState('');
+  const [error,   setError]   = useState([]); // Ahora es un array de errores
   const [loading, setLoading] = useState(false);
+  const [validated, setValidated] = useState(false);
 
   const handleChange = (field, value) => {
     if (field === 'rut') value = formatRut(value);
+    if (field === 'nombre_completo') value = value.replace(/[0-9]/g, ''); // Evitar números
+    if (field === 'telefono') {
+       let digits = value.replace(/\D/g, '');
+       if (digits.startsWith('56')) digits = digits.substring(2);
+       if (digits.length > 9) digits = digits.substring(0, 9);
+       
+       if (digits.length === 0) value = '';
+       else if (digits.length <= 1) value = `+56 ${digits}`;
+       else if (digits.length <= 5) value = `+56 ${digits.substring(0,1)} ${digits.substring(1)}`;
+       else value = `+56 ${digits.substring(0,1)} ${digits.substring(1,5)} ${digits.substring(5)}`;
+    }
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    // Validaciones
-    if (!validarRut(form.rut)) {
-      setError('El RUT ingresado no es válido.');
+    const formEl = e.currentTarget;
+    if (formEl.checkValidity() === false) {
+      e.stopPropagation();
+      setValidated(true);
+      setError(['Por favor, completa todos los campos obligatorios y revisa los campos marcados en rojo.']);
       return;
     }
+    
+    setError([]);
+    setValidated(true);
+
+    // Acumular validaciones personalizadas
+    const erroresValidacion = [];
+
+    if (!validarRut(form.rut)) {
+      erroresValidacion.push('El RUT ingresado no es válido.');
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.correo)) {
+      erroresValidacion.push('Debes ingresar un correo electrónico válido (ej: nombre@dominio.com).');
+    }
+
+    const phoneClean = form.telefono.replace(/\D/g, '');
+    if (phoneClean.length !== 11 || !phoneClean.startsWith('569')) {
+      erroresValidacion.push('El teléfono debe tener un formato válido de Chile (ej: +56 9 1234 5678).');
+    }
+
     const errorFecha = validarFecha(form.fecha_nacimiento);
     if (errorFecha) {
-      setError(errorFecha);
-      return;
+      erroresValidacion.push(errorFecha);
     }
+    
     if (form.password !== form.confirm) {
-      setError('Las contraseñas no coinciden.');
-      return;
+      erroresValidacion.push('Las contraseñas no coinciden.');
+    } else {
+      if (form.password.length < 8) {
+        erroresValidacion.push('La contraseña debe tener al menos 8 caracteres.');
+      }
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
+      if (!passwordRegex.test(form.password)) {
+        erroresValidacion.push('La contraseña debe incluir al menos una mayúscula, un número y un carácter especial (!@#$%^&*).');
+      }
     }
-    if (form.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+
+    if (erroresValidacion.length > 0) {
+      setError(erroresValidacion);
       return;
     }
 
@@ -117,7 +158,7 @@ export default function Registro() {
       );
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo completar el registro.');
+      setError([err.response?.data?.mensaje || err.response?.data?.message || 'No se pudo completar el registro.']);
     } finally {
       setLoading(false);
     }
@@ -125,6 +166,33 @@ export default function Registro() {
 
   const labelStyle = { fontWeight: 600, fontSize: 'var(--text-sm)' };
   const inputStyle = { borderRadius: 'var(--radius-md)', padding: '0.6rem 0.9rem' };
+
+  // Computed validations for visual feedback
+  const isRutValid = form.rut.length > 0 && validarRut(form.rut);
+  const isRutInvalid = form.rut.length > 0 && !isRutValid;
+
+  const isNombreValid = form.nombre_completo.length >= 3;
+  const isNombreInvalid = form.nombre_completo.length > 0 && !isNombreValid;
+
+  const errorFechaComputed = validarFecha(form.fecha_nacimiento);
+  const isFechaValid = form.fecha_nacimiento.length > 0 && !errorFechaComputed;
+  const isFechaInvalid = form.fecha_nacimiento.length > 0 && !!errorFechaComputed;
+
+  const isSexoValid = form.sexo !== '';
+  const isSexoInvalid = validated && !isSexoValid;
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo);
+  const isEmailInvalid = form.correo.length > 0 && !isEmailValid;
+
+  const phoneCleanC = form.telefono.replace(/\D/g, '');
+  const isPhoneValid = phoneCleanC.length === 11 && phoneCleanC.startsWith('569');
+  const isPhoneInvalid = form.telefono.length > 0 && !isPhoneValid;
+
+  const isPasswordValid = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/.test(form.password);
+  const isPasswordInvalid = form.password.length > 0 && !isPasswordValid;
+
+  const isConfirmValid = form.confirm.length > 0 && form.confirm === form.password;
+  const isConfirmInvalid = form.confirm.length > 0 && !isConfirmValid;
 
   return (
     <div
@@ -196,13 +264,21 @@ export default function Registro() {
               Tu cuenta será activada por el administrador
             </p>
 
-            {error && (
+            {error.length > 0 && (
               <Alert variant="danger" style={{ borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' }}>
-                {error}
+                {error.length === 1 ? (
+                  <span>{error[0]}</span>
+                ) : (
+                  <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                    {error.map((err, idx) => (
+                      <li key={idx}>{err}</li>
+                    ))}
+                  </ul>
+                )}
               </Alert>
             )}
 
-            <Form onSubmit={handleSubmit}>
+            <Form noValidate validated={validated} onSubmit={handleSubmit}>
               {/* RUT */}
               <Form.Group className="mb-3" controlId="regRut">
                 <Form.Label style={labelStyle}>RUT *</Form.Label>
@@ -214,7 +290,10 @@ export default function Registro() {
                   required
                   maxLength={12}
                   style={inputStyle}
+                  isValid={isRutValid}
+                  isInvalid={isRutInvalid || (validated && !form.rut)}
                 />
+                <Form.Control.Feedback type="invalid">Este campo es obligatorio.</Form.Control.Feedback>
                 <Form.Text className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>
                   Ingresa tu RUT chileno con puntos y guión
                 </Form.Text>
@@ -229,8 +308,12 @@ export default function Registro() {
                   value={form.nombre_completo}
                   onChange={e => handleChange('nombre_completo', e.target.value)}
                   required
+                  maxLength={100}
                   style={inputStyle}
+                  isValid={isNombreValid}
+                  isInvalid={isNombreInvalid || (validated && !form.nombre_completo)}
                 />
+                <Form.Control.Feedback type="invalid">Debes ingresar tu nombre completo.</Form.Control.Feedback>
               </Form.Group>
 
               {/* Fecha de nacimiento + Sexo */}
@@ -245,7 +328,10 @@ export default function Registro() {
                       required
                       max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
                       style={inputStyle}
+                      isValid={isFechaValid}
+                      isInvalid={isFechaInvalid || (validated && !form.fecha_nacimiento)}
                     />
+                    <Form.Control.Feedback type="invalid">Fecha inválida.</Form.Control.Feedback>
                     <Form.Text className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>
                       Debes ser mayor de 18 años
                     </Form.Text>
@@ -259,12 +345,15 @@ export default function Registro() {
                       onChange={e => handleChange('sexo', e.target.value)}
                       required
                       style={inputStyle}
+                      isValid={isSexoValid}
+                      isInvalid={isSexoInvalid}
                     >
                       <option value="">Seleccionar</option>
                       <option value="masculino">Masculino</option>
                       <option value="femenino">Femenino</option>
                       <option value="otro">Prefiero no decir</option>
                     </Form.Select>
+                    <Form.Control.Feedback type="invalid">Selecciona una opción.</Form.Control.Feedback>
                   </Form.Group>
                 </Col>
               </Row>
@@ -280,8 +369,12 @@ export default function Registro() {
                       value={form.correo}
                       onChange={e => handleChange('correo', e.target.value)}
                       required
+                      maxLength={100}
                       style={inputStyle}
+                      isValid={isEmailValid}
+                      isInvalid={isEmailInvalid || (validated && !form.correo)}
                     />
+                    <Form.Control.Feedback type="invalid">Correo inválido.</Form.Control.Feedback>
                   </Form.Group>
                 </Col>
                 <Col xs={12} sm={5}>
@@ -293,8 +386,12 @@ export default function Registro() {
                       value={form.telefono}
                       onChange={e => handleChange('telefono', e.target.value)}
                       required
+                      maxLength={15}
                       style={inputStyle}
+                      isValid={isPhoneValid}
+                      isInvalid={isPhoneInvalid || (validated && !form.telefono)}
                     />
+                    <Form.Control.Feedback type="invalid">Teléfono requerido.</Form.Control.Feedback>
                   </Form.Group>
                 </Col>
               </Row>
@@ -310,8 +407,12 @@ export default function Registro() {
                       value={form.password}
                       onChange={e => handleChange('password', e.target.value)}
                       required
+                      maxLength={128}
                       style={inputStyle}
+                      isValid={isPasswordValid}
+                      isInvalid={isPasswordInvalid || (validated && !form.password)}
                     />
+                    <Form.Control.Feedback type="invalid">Contraseña requerida.</Form.Control.Feedback>
                   </Form.Group>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -323,8 +424,12 @@ export default function Registro() {
                       value={form.confirm}
                       onChange={e => handleChange('confirm', e.target.value)}
                       required
+                      maxLength={128}
                       style={inputStyle}
+                      isValid={isConfirmValid}
+                      isInvalid={isConfirmInvalid || (validated && !form.confirm)}
                     />
+                    <Form.Control.Feedback type="invalid">Confirma la contraseña.</Form.Control.Feedback>
                   </Form.Group>
                 </Col>
               </Row>

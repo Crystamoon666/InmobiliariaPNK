@@ -26,6 +26,7 @@ export default function PrimaryButton({
   disabled = false,
   className = '',
   fullWidth = false,
+  ...props
 }) {
   return (
     <Button
@@ -34,6 +35,7 @@ export default function PrimaryButton({
       onClick={onClick}
       disabled={disabled || loading}
       className={`${fullWidth ? 'w-100' : ''} ${className}`}
+      {...props}
     >
       {loading ? (
         <>

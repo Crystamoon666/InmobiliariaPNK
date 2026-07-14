@@ -4,21 +4,39 @@
  * TODO Fase 5: reemplazar mockProperties con propiedadService.getMias()
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button } from 'react-bootstrap';
+import { Table, Button, Spinner } from 'react-bootstrap';
 import { PageHeader, StatusBadge, EmptyState } from '../../components/ui';
 import { alertConfirm, alertSuccess, alertError } from '../../components/ui/Alerts';
 import PropertyFormModal from '../../components/properties/PropertyFormModal';
-import { mockProperties } from '../../data/mockData';
+import { getImageUrl } from '../../utils/imageUtils';
+import * as propiedadService from '../../services/propiedadService';
 
 export default function MisPropiedades() {
   const navigate = useNavigate();
-  // Simula solo las primeras 3 como "mías"
-  const [propiedades, setPropiedades] = useState(mockProperties.slice(0, 3));
+  const [propiedades, setPropiedades] = useState([]);
   const [showModal,   setShowModal]   = useState(false);
   const [editData,    setEditData]    = useState(null);
   const [saving,      setSaving]      = useState(false);
+  const [loading,     setLoading]     = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const data = await propiedadService.getMias();
+      setPropiedades(data);
+    } catch (err) {
+      console.error(err);
+      alertError('Error', 'No se pudieron cargar tus propiedades.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const formatCLP = (n) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
@@ -26,23 +44,21 @@ export default function MisPropiedades() {
   const openCreate = () => { setEditData(null); setShowModal(true); };
   const openEdit   = (p)  => { setEditData(p);   setShowModal(true); };
 
-  const handleSave = async (form) => {
+  const handleSave = async (formObj) => {
     setSaving(true);
     try {
-      await new Promise(r => setTimeout(r, 700)); // simula delay
       if (editData) {
-        // TODO Fase 5: propiedadService.updatePropiedad(editData.id, form)
-        setPropiedades(prev => prev.map(p => p.id === editData.id ? { ...p, ...form } : p));
+        await propiedadService.updatePropiedad(editData.id, formObj);
         await alertSuccess('¡Actualizada!', 'Los cambios fueron guardados correctamente.');
       } else {
-        // TODO Fase 5: propiedadService.createPropiedad(form)
-        const newProp = { id: Date.now(), ...form, estado: 'publicada', fecha_publicacion: new Date().toISOString().split('T')[0] };
-        setPropiedades(prev => [...prev, newProp]);
+        await propiedadService.createPropiedad(formObj);
         await alertSuccess('¡Publicada!', 'Tu propiedad ya está visible en el sitio.');
       }
       setShowModal(false);
-    } catch {
-      await alertError('Error', 'No se pudo guardar la propiedad.');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      await alertError('Error', err.response?.data?.message || 'No se pudo guardar la propiedad.');
     } finally {
       setSaving(false);
     }
@@ -51,9 +67,13 @@ export default function MisPropiedades() {
   const handleDelete = async (prop) => {
     const ok = await alertConfirm('¿Eliminar propiedad?', 'No podrás deshacer esta acción.', 'Sí, eliminar');
     if (!ok) return;
-    // TODO Fase 5: propiedadService.deletePropiedad(prop.id)
-    setPropiedades(prev => prev.filter(p => p.id !== prop.id));
-    await alertSuccess('Eliminada', 'Tu propiedad fue eliminada.');
+    try {
+      await propiedadService.deletePropiedad(prop.id);
+      setPropiedades(prev => prev.filter(p => p.id !== prop.id));
+      await alertSuccess('Eliminada', 'Tu propiedad fue eliminada.');
+    } catch (err) {
+      await alertError('Error', 'No se pudo eliminar la propiedad.');
+    }
   };
 
   return (
@@ -68,7 +88,12 @@ export default function MisPropiedades() {
         }
       />
 
-      {propiedades.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando propiedades...</p>
+        </div>
+      ) : propiedades.length === 0 ? (
         <EmptyState
           icon="🏠"
           title="Sin propiedades"
@@ -88,11 +113,16 @@ export default function MisPropiedades() {
               </tr>
             </thead>
             <tbody>
-              {propiedades.map(p => (
+              {propiedades.map(p => {
+                const rawImg = (Array.isArray(p.fotos) && p.fotos.length > 0)
+                  ? (typeof p.fotos[0] === 'string' ? p.fotos[0] : p.fotos[0]?.url)
+                  : (p.foto_url || null);
+                const urlImg = getImageUrl(rawImg) || '';
+                return (
                 <tr key={p.id}>
                   <td style={{ verticalAlign: 'middle', padding: '1rem' }}>
                     <div className="d-flex gap-3 align-items-center">
-                      <img src={p.foto_url} alt={p.tipo}
+                      <img src={urlImg} alt={p.tipo}
                         style={{ width: '60px', height: '48px', objectFit: 'cover', borderRadius: 'var(--radius-md)', flexShrink: 0 }}
                         onError={e => e.currentTarget.style.display = 'none'}
                       />
@@ -124,7 +154,7 @@ export default function MisPropiedades() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </Table>
         </div>

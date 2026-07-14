@@ -9,6 +9,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { Badge } from 'react-bootstrap';
+import { getImageUrl } from '../../utils/imageUtils';
 
 const TIPO_LABEL = {
   casa:         'Casa',
@@ -39,6 +40,12 @@ export default function PropertyCard({ property }) {
   const formatCLP = (n) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
 
+  // Derivar URL de imagen: primero de fotos[], luego de foto_url, luego default
+  const rawFoto = (Array.isArray(property?.fotos) && property.fotos.length > 0)
+    ? (typeof property.fotos[0] === 'string' ? property.fotos[0] : property.fotos[0]?.url)
+    : (property?.foto_url || null);
+  const imageSrc = getImageUrl(rawFoto) || DEFAULT_IMG;
+
   return (
     <div
       className="property-card"
@@ -48,7 +55,7 @@ export default function PropertyCard({ property }) {
       {/* Imagen */}
       <div style={{ position: 'relative', overflow: 'hidden', height: '200px' }}>
         <img
-          src={foto_url}
+          src={imageSrc}
           alt={`Propiedad en ${comuna}`}
           style={{
             width:      '100%',

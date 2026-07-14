@@ -7,12 +7,13 @@
  * TODO Fase 5: reemplazar mockProperties con propiedadService.getById(id)
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Badge, Button } from 'react-bootstrap';
-import { mockProperties } from '../../data/mockData';
+import { Container, Row, Col, Badge, Button, Spinner } from 'react-bootstrap';
+import { getById } from '../../services/propiedadService';
 import { alertSuccess } from '../../components/ui/Alerts';
 import MapView from '../../components/map/MapView';
+import { getImageUrl } from '../../utils/imageUtils';
 
 const TIPO_LABEL = { casa: 'Casa', departamento: 'Departamento', terreno: 'Terreno' };
 
@@ -64,7 +65,8 @@ function PhotoCarousel({ fotos, titulo }) {
   const prev = () => setActiveIndex(i => (i - 1 + fotos.length) % fotos.length);
   const next = () => setActiveIndex(i => (i + 1) % fotos.length);
   const fotoActual = fotos[activeIndex];
-  const src = fotoActual?.preview || fotoActual?.url || fotoActual?.foto_url || fotoActual;
+  const rawSrc = fotoActual?.preview || fotoActual?.url || fotoActual?.foto_url || fotoActual;
+  const src = getImageUrl(typeof rawSrc === 'string' ? rawSrc : null) || rawSrc;
 
   return (
     <div style={{ position: 'relative' }}>
@@ -220,7 +222,8 @@ function PhotoCarousel({ fotos, titulo }) {
           }}
         >
           {fotos.map((foto, i) => {
-            const thumbSrc = foto?.preview || foto?.url || foto?.foto_url || foto;
+            const rawThumb = foto?.preview || foto?.url || foto?.foto_url || foto;
+            const thumbSrc = getImageUrl(typeof rawThumb === 'string' ? rawThumb : null) || rawThumb;
             return (
               <button
                 key={i}
@@ -261,7 +264,27 @@ export default function PropiedadesDetalle() {
   const { id }   = useParams();
   const navigate = useNavigate();
 
-  const property = mockProperties.find(p => p.id === Number(id));
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getById(id)
+      .then(data => setProperty(data))
+      .catch(err => {
+        console.error(err);
+        setProperty(null);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="primary" />
+        <h4 className="mt-3">Cargando propiedad...</h4>
+      </Container>
+    );
+  }
 
   if (!property) {
     return (
@@ -292,9 +315,16 @@ export default function PropiedadesDetalle() {
     { key: 'piscina',         icon: '🏊', label: 'Piscina' },
   ].filter(a => property[a.key]);
 
-  // Normalizar fotos: la propiedad puede tener foto_url (string) o fotos (array)
-  const fotos = property.fotos?.length
-    ? property.fotos
+  // Normalizar fotos: asegurarse de que sea un arreglo incluso si viene como string JSON
+  let parsedFotos = [];
+  if (typeof property.fotos === 'string') {
+    try { parsedFotos = JSON.parse(property.fotos); } catch (e) { parsedFotos = []; }
+  } else if (Array.isArray(property.fotos)) {
+    parsedFotos = property.fotos;
+  }
+
+  const fotos = parsedFotos.length
+    ? parsedFotos
     : property.foto_url
       ? [{ url: property.foto_url }]
       : [];
@@ -465,17 +495,8 @@ export default function PropiedadesDetalle() {
                 </p>
               )}
 
-              <hr style={{ borderColor: 'var(--color-gray-300)' }} />
-
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)' }}>
-                <p style={{ margin: '0 0 0.5rem', fontWeight: 600, color: 'var(--color-dark)' }}>📋 Detalles</p>
-                <p style={{ margin: '0 0 0.25rem' }}>
-                  📅 Publicada: {new Date(property.fecha_publicacion).toLocaleDateString('es-CL')}
-                </p>
-                <p style={{ margin: '0 0 0.25rem' }}>🏷 ID: #{property.id}</p>
-                {property.numero_bien_raiz && (
-                  <p style={{ margin: 0 }}>📄 BR: {property.numero_bien_raiz}</p>
-                )}
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)', textAlign: 'center', marginTop: '1.5rem' }}>
+                Publicada el {new Date(property.fecha_publicacion || property.createdAt || new Date()).toLocaleDateString('es-CL')}
               </div>
             </div>
           </Col>
